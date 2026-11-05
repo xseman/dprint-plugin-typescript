@@ -54,6 +54,7 @@ impl ConfigurationBuilder {
       .binary_expression_operator_position(OperatorPosition::SameLine)
       .conditional_expression_operator_position(OperatorPosition::NextLine)
       .conditional_type_operator_position(OperatorPosition::NextLine)
+      .union_and_intersection_type_operator_position(OperatorPosition::NextLine)
       .brace_position(BracePosition::SameLine)
       .comment_line_force_space_after_slashes(false)
       .construct_signature_space_after_new_keyword(true)
@@ -69,8 +70,8 @@ impl ConfigurationBuilder {
       .ignore_file_comment_text("deno-fmt-ignore-file")
       .module_sort_import_declarations(SortOrder::Maintain)
       .module_sort_export_declarations(SortOrder::Maintain)
-      .export_declaration_sort_type_only_exports(NamedTypeImportsExportsOrder::None)
-      .import_declaration_sort_type_only_imports(NamedTypeImportsExportsOrder::None)
+      .export_declaration_sort_type_only_exports(NamedTypeImportsExportsOrder::Inline)
+      .import_declaration_sort_type_only_imports(NamedTypeImportsExportsOrder::Inline)
   }
 
   /// The width of a line the printer will try to stay under. Note that the printer may exceed this width in certain cases.
@@ -123,6 +124,37 @@ impl ConfigurationBuilder {
     self.insert("jsx.multiLineParens", value.to_string().into())
   }
 
+  /// How to sort JSX class attribute values, which is either only the kind of sorting
+  /// (ex. `JsxClassNamesSortOrder::Tailwind`) or a `JsxClassNamesSortConfig` with its options.
+  ///
+  /// Default: `JsxClassNamesSortOrder::Maintain`
+  pub fn jsx_sort_class_names(&mut self, value: impl Into<JsxClassNamesSortConfig>) -> &mut Self {
+    fn to_array(values: Vec<String>) -> ConfigKeyValue {
+      ConfigKeyValue::Array(values.into_iter().map(ConfigKeyValue::String).collect())
+    }
+
+    let value = value.into();
+    let mut values = ConfigKeyMap::new();
+    values.insert("kind".to_string(), value.kind.to_string().into());
+    values.insert("functions".to_string(), to_array(value.functions));
+    values.insert("attributes".to_string(), to_array(value.attributes));
+    values.insert("preserveWhitespace".to_string(), value.preserve_whitespace.into());
+    values.insert("preserveDuplicates".to_string(), value.preserve_duplicates.into());
+    if let Some(prefix) = value.prefix {
+      values.insert("prefix".to_string(), prefix.into());
+    }
+    values.insert(
+      "theme".to_string(),
+      ConfigKeyValue::Object(value.theme.into_iter().map(|(name, value)| (name, value.into())).collect()),
+    );
+    values.insert("variants".to_string(), to_array(value.variants));
+    values.insert(
+      "utilities".to_string(),
+      ConfigKeyValue::Object(value.utilities.into_iter().map(|(name, properties)| (name, to_array(properties))).collect()),
+    );
+    self.insert("jsx.sortClassNames", ConfigKeyValue::Object(values))
+  }
+
   /// Forces newlines surrounding the content of JSX elements.
   ///
   /// Default: `false`
@@ -136,6 +168,13 @@ impl ConfigurationBuilder {
   /// Default: `nextLine`
   pub fn jsx_bracket_position(&mut self, value: SameOrNextLinePosition) -> &mut Self {
     self.insert("jsx.bracketPosition", value.to_string().into())
+  }
+
+  /// Whether a class or class member should be on the same or next line as its decorators.
+  ///
+  /// Default: `maintain`
+  pub fn decorators_position(&mut self, value: SameOrNextLinePosition) -> &mut Self {
+    self.insert("decorators.position", value.to_string().into())
   }
 
   /// If the end angle bracket of a jsx opening element should be on the same
@@ -156,9 +195,9 @@ impl ConfigurationBuilder {
 
   /// Whether statements should end in a semi-colon.
   ///
-  /// Default: `SemiColons::Prefer`
-  pub fn semi_colons(&mut self, value: SemiColons) -> &mut Self {
-    self.insert("semiColons", value.to_string().into())
+  /// Default: `Semicolons::Prefer`
+  pub fn semicolons(&mut self, value: Semicolons) -> &mut Self {
+    self.insert("semicolons", value.to_string().into())
   }
 
   /// Set to prefer hanging indentation when exceeding the line width.
@@ -212,6 +251,20 @@ impl ConfigurationBuilder {
     self.insert("fileIndentLevel", (value as i32).into())
   }
 
+  /// The maximum number of consecutive blank lines to keep.
+  ///
+  /// Default: `1`
+  pub fn max_blank_lines(&mut self, value: u32) -> &mut Self {
+    self.insert("maxBlankLines", (value as i32).into())
+  }
+
+  /// Whether to keep blank lines at the start and end of a block.
+  ///
+  /// Default: `BlockPadding::Remove`
+  pub fn block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("blockPadding", value.to_string().into())
+  }
+
   /// If trailing commas should be used.
   ///
   /// Default: `TrailingCommas::OnlyMultiLine`
@@ -234,6 +287,17 @@ impl ConfigurationBuilder {
     self.insert("preferSingleLine", value.into())
   }
 
+  /// Whether to align the values of consecutive variable statements, object properties,
+  /// class properties, enum members, and interface and type literal properties. A blank
+  /// line or a member on multiple lines ends the group, and the alignment never makes
+  /// a line go over the line width.
+  ///
+  /// * `true` - Ex. `const a   = 1;` and `const bbb = 2;`
+  /// * `false` (default) - Ex. `const a = 1;` and `const bbb = 2;`
+  pub fn align_assignments(&mut self, value: bool) -> &mut Self {
+    self.insert("alignAssignments", value.into())
+  }
+
   /* space settings */
 
   /// Whether to surround bitwise and arithmetic operators in a binary expression with spaces.
@@ -242,6 +306,14 @@ impl ConfigurationBuilder {
   /// * `false` - Ex. `1+2`
   pub fn binary_expression_space_surrounding_bitwise_and_arithmetic_operator(&mut self, value: bool) -> &mut Self {
     self.insert("binaryExpression.spaceSurroundingBitwiseAndArithmeticOperator", value.into())
+  }
+
+  /// Whether to add a space after the `catch` keyword in a catch clause.
+  ///
+  /// * `true` (default) - Ex. `catch (err)`
+  /// * `false` - Ex. `catch(err)`
+  pub fn catch_clause_space_after_catch_keyword(&mut self, value: bool) -> &mut Self {
+    self.insert("catchClause.spaceAfterCatchKeyword", value.into())
   }
 
   /// Forces a space after the double slash in a comment line.
@@ -304,8 +376,8 @@ impl ConfigurationBuilder {
   ///
   /// * `true` (default) - Ex. `for (let i = 0; i < 5; i++)`
   /// * `false` - Ex. `for (let i = 0;i < 5;i++)`
-  pub fn for_statement_space_after_semi_colons(&mut self, value: bool) -> &mut Self {
-    self.insert("forStatement.spaceAfterSemiColons", value.into())
+  pub fn for_statement_space_after_semicolons(&mut self, value: bool) -> &mut Self {
+    self.insert("forStatement.spaceAfterSemicolons", value.into())
   }
 
   /// Whether to add a space after the `for` keyword in a "for in" statement.
@@ -316,10 +388,10 @@ impl ConfigurationBuilder {
     self.insert("forInStatement.spaceAfterForKeyword", value.into())
   }
 
-  /// Whether to add a space after the `for` keyword in a "for of" statement.
+  /// Whether to add a space after the `for` keyword, or the `await` keyword in a `for await`, in a "for of" statement.
   ///
-  /// * `true` (default) - Ex. `for (const value of myArray)`
-  /// * `false` - Ex. `for(const value of myArray)`
+  /// * `true` (default) - Ex. `for (const value of myArray)` or `for await (const value of myArray)`
+  /// * `false` - Ex. `for(const value of myArray)` or `for await(const value of myArray)`
   pub fn for_of_statement_space_after_for_keyword(&mut self, value: bool) -> &mut Self {
     self.insert("forOfStatement.spaceAfterForKeyword", value.into())
   }
@@ -348,6 +420,14 @@ impl ConfigurationBuilder {
     self.insert("functionExpression.spaceAfterFunctionKeyword", value.into())
   }
 
+  /// Whether to skip indenting the body of a function expression used in an IIFE.
+  ///
+  /// `true` - Does not indent the body of the function in `(function() { ... })();`.
+  /// `false` (default) - Indents the body as normal.
+  pub fn function_expression_flat_iife(&mut self, value: bool) -> &mut Self {
+    self.insert("functionExpression.flatIife", value.into())
+  }
+
   /// Whether to add a space before the parentheses of a get accessor.
   ///
   /// `true` - Ex. `get myProp ()`
@@ -373,6 +453,7 @@ impl ConfigurationBuilder {
   }
 
   /// Whether to add a space surrounding the expression of a JSX container.
+  /// No space is added around an object or array literal (ex. `{{ value: true }}`).
   ///
   /// * `true` - Ex. `{ myValue }`
   /// * `false` (default) - Ex. `{myValue}`
@@ -386,6 +467,14 @@ impl ConfigurationBuilder {
   /// * `false` - Ex. `<Test/>`
   pub fn jsx_self_closing_element_space_before_slash(&mut self, value: bool) -> &mut Self {
     self.insert("jsxSelfClosingElement.spaceBeforeSlash", value.into())
+  }
+
+  /// Whether to add a space surrounding the properties of a single line mapped type.
+  ///
+  /// * `true` (default) - Ex. `{ [key in Type]: string }`
+  /// * `false` - Ex. `{[key in Type]: string}`
+  pub fn mapped_type_space_surrounding_properties(&mut self, value: bool) -> &mut Self {
+    self.insert("mappedType.spaceSurroundingProperties", value.into())
   }
 
   /// Whether to add a space surrounding the properties of an object expression.
@@ -420,12 +509,30 @@ impl ConfigurationBuilder {
     self.insert("setAccessor.spaceBeforeParentheses", value.into())
   }
 
+  /// Whether to add a space after the keyword of a control flow statement and before its open paren.
+  /// This is the default for the `spaceAfter...Keyword` options of the `if`, `for`, `for...in`,
+  /// `for...of`, `while`, `do...while`, `with` and `switch` statements and the catch clause.
+  ///
+  /// * `true` (default) - Ex. `if (true)`
+  /// * `false` - Ex. `if(true)`
+  pub fn space_after_control_flow_keyword(&mut self, value: bool) -> &mut Self {
+    self.insert("spaceAfterControlFlowKeyword", value.into())
+  }
+
   /// Whether to add a space surrounding the properties of object-like nodes.
   ///
   /// * `true` (default) - Ex. `{ key: value }`
   /// * `false` - Ex. `{key: value}`
   pub fn space_surrounding_properties(&mut self, value: bool) -> &mut Self {
     self.insert("spaceSurroundingProperties", value.into())
+  }
+
+  /// Whether to add a space after the `switch` keyword in a switch statement.
+  ///
+  /// * `true` (default) - Ex. `switch (value)`
+  /// * `false` - Ex. `switch(value)`
+  pub fn switch_statement_space_after_switch_keyword(&mut self, value: bool) -> &mut Self {
+    self.insert("switchStatement.spaceAfterSwitchKeyword", value.into())
   }
 
   /// Whether to add a space before the literal in a tagged template.
@@ -468,6 +575,14 @@ impl ConfigurationBuilder {
     self.insert("whileStatement.spaceAfterWhileKeyword", value.into())
   }
 
+  /// Whether to add a space after the `with` keyword in a with statement.
+  ///
+  /// * `true` (default) - Ex. `with (obj)`
+  /// * `false` - Ex. `with(obj)`
+  pub fn with_statement_space_after_with_keyword(&mut self, value: bool) -> &mut Self {
+    self.insert("withStatement.spaceAfterWithKeyword", value.into())
+  }
+
   /// Whether to place spaces around enclosed expressions.
   ///
   /// * `true` - Ex. `myFunction( true )`
@@ -495,10 +610,18 @@ impl ConfigurationBuilder {
 
   /// Whether to force a line per expression when spanning multiple lines.
   ///
-  /// * `true` - Formats with each part on a new line.
-  /// * `false` (default) - Maintains the line breaks as written by the programmer.
+  /// * `true` (default) - Formats with each part on a new line.
+  /// * `false` - Maintains the line breaks as written by the programmer.
   pub fn conditional_expression_line_per_expression(&mut self, value: bool) -> &mut Self {
     self.insert("conditionalExpression.linePerExpression", value.into())
+  }
+
+  /// Whether to force a line per expression when spanning multiple lines.
+  ///
+  /// * `true` - Formats with each part on a new line.
+  /// * `false` (default) - Maintains the line breaks as written by the programmer.
+  pub fn conditional_type_line_per_expression(&mut self, value: bool) -> &mut Self {
+    self.insert("conditionalType.linePerExpression", value.into())
   }
 
   /// Whether to force a line per expression when spanning multiple lines.
@@ -509,18 +632,43 @@ impl ConfigurationBuilder {
     self.insert("memberExpression.linePerExpression", value.into())
   }
 
+  /// Whether to format the text of tagged templates whose tag is in `tagged_template_embedded_languages`
+  /// (ex. html\`...\` and css\`...\`) with an external formatter.
+  ///
+  /// Default: `true`
+  pub fn tagged_template_format_embedded(&mut self, value: bool) -> &mut Self {
+    self.insert("taggedTemplate.formatEmbedded", value.into())
+  }
+
+  /// Map of a tagged template's tag to the file extension of the language its text is formatted
+  /// as (ex. `"html"` to `"html"`), which replaces the defaults. The styled-components patterns
+  /// (ex. styled.div\`...\`) use the `"css"` entry.
+  ///
+  /// Default: `css` is formatted as `less`, `gql` and `graphql` as `graphql`, and `html`, `sql`,
+  /// `svg`, and `xml` as themselves.
+  pub fn tagged_template_embedded_languages<TTag: Into<String>, TExtension: Into<String>>(
+    &mut self,
+    value: impl IntoIterator<Item = (TTag, TExtension)>,
+  ) -> &mut Self {
+    let values = value
+      .into_iter()
+      .map(|(tag, extension)| (tag.into(), ConfigKeyValue::String(extension.into())))
+      .collect();
+    self.insert("taggedTemplate.embeddedLanguages", ConfigKeyValue::Object(values))
+  }
+
   /// The kind of separator to use in type literals.
-  pub fn type_literal_separator_kind(&mut self, value: SemiColonOrComma) -> &mut Self {
+  pub fn type_literal_separator_kind(&mut self, value: SemicolonOrComma) -> &mut Self {
     self.insert("typeLiteral.separatorKind", value.to_string().into())
   }
 
   /// The kind of separator to use in type literals when single line.
-  pub fn type_literal_separator_kind_single_line(&mut self, value: SemiColonOrComma) -> &mut Self {
+  pub fn type_literal_separator_kind_single_line(&mut self, value: SemicolonOrComma) -> &mut Self {
     self.insert("typeLiteral.separatorKind.singleLine", value.to_string().into())
   }
 
   /// The kind of separator to use in type literals when multi-line.
-  pub fn type_literal_separator_kind_multi_line(&mut self, value: SemiColonOrComma) -> &mut Self {
+  pub fn type_literal_separator_kind_multi_line(&mut self, value: SemicolonOrComma) -> &mut Self {
     self.insert("typeLiteral.separatorKind.multiLine", value.to_string().into())
   }
 
@@ -531,6 +679,13 @@ impl ConfigurationBuilder {
   /// Default: Case insensitive
   pub fn module_sort_import_declarations(&mut self, value: SortOrder) -> &mut Self {
     self.insert("module.sortImportDeclarations", value.to_string().into())
+  }
+
+  /// The number of blank lines to force after the import declarations at the top of a module.
+  ///
+  /// Default: Maintains the blank lines up to `maxBlankLines`
+  pub fn module_blank_lines_after_imports(&mut self, value: u32) -> &mut Self {
+    self.insert("module.blankLinesAfterImports", (value as i32).into())
   }
 
   /// Alphabetically sorts the export declarations based on their module specifiers.
@@ -547,9 +702,9 @@ impl ConfigurationBuilder {
     self.insert("importDeclaration.sortNamedImports", value.to_string().into())
   }
 
-  /// Sorts type-only named imports first, last, or none (no sorting).
+  /// Sorts type-only named imports first, last, or inline with the other named imports.
   ///
-  /// Default: Last
+  /// Default: Inline
   pub fn import_declaration_sort_type_only_imports(&mut self, value: NamedTypeImportsExportsOrder) -> &mut Self {
     self.insert("importDeclaration.sortTypeOnlyImports", value.to_string().into())
   }
@@ -561,11 +716,55 @@ impl ConfigurationBuilder {
     self.insert("exportDeclaration.sortNamedExports", value.to_string().into())
   }
 
-  /// Sorts type-only named exports first, last, or none (no sorting).
+  /// Sorts type-only named exports first, last, or inline with the other named exports.
   ///
-  /// Default: Last
+  /// Default: Inline
   pub fn export_declaration_sort_type_only_exports(&mut self, value: NamedTypeImportsExportsOrder) -> &mut Self {
     self.insert("exportDeclaration.sortTypeOnlyExports", value.to_string().into())
+  }
+
+  /// Ordered groups for `module.importGroups`. Empty = feature disabled.
+  ///
+  /// Default: `[]`
+  pub fn module_import_groups(&mut self, value: Vec<ImportGroup>) -> &mut Self {
+    fn matcher_to_value(matcher: ImportMatcher) -> ConfigKeyValue {
+      match matcher {
+        ImportMatcher::Category(category) => category.to_string().into(),
+        ImportMatcher::Pattern { pattern } => {
+          let mut values = ConfigKeyMap::new();
+          values.insert("pattern".to_string(), pattern.into());
+          ConfigKeyValue::Object(values)
+        }
+      }
+    }
+
+    let groups = value
+      .into_iter()
+      .map(|group| {
+        let match_value = match group.matchers {
+          ImportGroupMatch::Single(matcher) => matcher_to_value(matcher),
+          ImportGroupMatch::Multiple(matchers) => ConfigKeyValue::Array(matchers.into_iter().map(matcher_to_value).collect()),
+        };
+        let mut values = ConfigKeyMap::new();
+        values.insert("match".to_string(), match_value);
+        ConfigKeyValue::Object(values)
+      })
+      .collect();
+    self.insert("module.importGroups", ConfigKeyValue::Array(groups))
+  }
+
+  /// How type-only imports are classified.
+  ///
+  /// Default: `Separate`
+  pub fn module_type_imports(&mut self, value: TypeImportsMode) -> &mut Self {
+    self.insert("module.typeImports", value.to_string().into())
+  }
+
+  /// How blank lines are handled between imports when grouping is enabled.
+  ///
+  /// Default: `Always`
+  pub fn module_import_groups_newlines_between(&mut self, value: NewlinesBetween) -> &mut Self {
+    self.insert("module.importGroupsNewlinesBetween", value.to_string().into())
   }
 
   /* ignore comments */
@@ -674,6 +873,10 @@ impl ConfigurationBuilder {
     self.insert("whileStatement.bracePosition", value.to_string().into())
   }
 
+  pub fn with_statement_brace_position(&mut self, value: BracePosition) -> &mut Self {
+    self.insert("withStatement.bracePosition", value.to_string().into())
+  }
+
   /* prefer hanging */
 
   pub fn arguments_prefer_hanging(&mut self, value: PreferHanging) -> &mut Self {
@@ -772,6 +975,41 @@ impl ConfigurationBuilder {
     self.insert("whileStatement.preferHanging", value.into())
   }
 
+  pub fn with_statement_prefer_hanging(&mut self, value: bool) -> &mut Self {
+    self.insert("withStatement.preferHanging", value.into())
+  }
+
+  /* situational indentation */
+
+  /// Whether to indent the hanging content of a conditional expression's true or false part
+  /// past the start of that part when its `?` or `:` starts the line.
+  ///
+  /// For example, `? {` followed by its properties indented past the `{` instead of lined up with it:
+  ///
+  /// ```ts
+  /// const value = condition
+  ///   ? {
+  ///       prop: 1,
+  ///     }
+  ///   : undefined;
+  /// ```
+  ///
+  /// This has no effect when the indent width is greater than 2 because the content is already
+  /// past the start of the part.
+  ///
+  /// Default: `false`
+  pub fn conditional_expression_indent_branch_content(&mut self, value: bool) -> &mut Self {
+    self.insert("conditionalExpression.indentBranchContent", value.into())
+  }
+
+  pub fn conditional_expression_use_nested_indentation(&mut self, value: bool) -> &mut Self {
+    self.insert("conditionalExpression.useNestedIndentation", value.into())
+  }
+
+  pub fn conditional_type_use_nested_indentation(&mut self, value: bool) -> &mut Self {
+    self.insert("conditionalType.useNestedIndentation", value.into())
+  }
+
   /* force single line */
 
   pub fn export_declaration_force_single_line(&mut self, value: bool) -> &mut Self {
@@ -794,8 +1032,118 @@ impl ConfigurationBuilder {
 
   /* member spacing */
 
+  pub fn class_declaration_member_spacing(&mut self, value: MemberSpacing) -> &mut Self {
+    self.insert("classDeclaration.memberSpacing", value.to_string().into())
+  }
+
+  pub fn class_expression_member_spacing(&mut self, value: MemberSpacing) -> &mut Self {
+    self.insert("classExpression.memberSpacing", value.to_string().into())
+  }
+
   pub fn enum_declaration_member_spacing(&mut self, value: MemberSpacing) -> &mut Self {
     self.insert("enumDeclaration.memberSpacing", value.to_string().into())
+  }
+
+  pub fn interface_declaration_member_spacing(&mut self, value: MemberSpacing) -> &mut Self {
+    self.insert("interfaceDeclaration.memberSpacing", value.to_string().into())
+  }
+
+  pub fn type_literal_member_spacing(&mut self, value: MemberSpacing) -> &mut Self {
+    self.insert("typeLiteral.memberSpacing", value.to_string().into())
+  }
+
+  /* block padding */
+
+  pub fn class_declaration_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("classDeclaration.blockPadding", value.to_string().into())
+  }
+
+  pub fn class_expression_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("classExpression.blockPadding", value.to_string().into())
+  }
+
+  pub fn enum_declaration_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("enumDeclaration.blockPadding", value.to_string().into())
+  }
+
+  pub fn interface_declaration_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("interfaceDeclaration.blockPadding", value.to_string().into())
+  }
+
+  pub fn module_declaration_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("moduleDeclaration.blockPadding", value.to_string().into())
+  }
+
+  pub fn arrow_function_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("arrowFunction.blockPadding", value.to_string().into())
+  }
+
+  pub fn constructor_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("constructor.blockPadding", value.to_string().into())
+  }
+
+  pub fn do_while_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("doWhileStatement.blockPadding", value.to_string().into())
+  }
+
+  pub fn for_in_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("forInStatement.blockPadding", value.to_string().into())
+  }
+
+  pub fn for_of_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("forOfStatement.blockPadding", value.to_string().into())
+  }
+
+  pub fn for_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("forStatement.blockPadding", value.to_string().into())
+  }
+
+  pub fn function_declaration_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("functionDeclaration.blockPadding", value.to_string().into())
+  }
+
+  pub fn function_expression_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("functionExpression.blockPadding", value.to_string().into())
+  }
+
+  pub fn get_accessor_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("getAccessor.blockPadding", value.to_string().into())
+  }
+
+  pub fn if_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("ifStatement.blockPadding", value.to_string().into())
+  }
+
+  pub fn method_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("method.blockPadding", value.to_string().into())
+  }
+
+  pub fn set_accessor_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("setAccessor.blockPadding", value.to_string().into())
+  }
+
+  pub fn static_block_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("staticBlock.blockPadding", value.to_string().into())
+  }
+
+  pub fn switch_case_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("switchCase.blockPadding", value.to_string().into())
+  }
+
+  pub fn switch_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("switchStatement.blockPadding", value.to_string().into())
+  }
+
+  pub fn try_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("tryStatement.blockPadding", value.to_string().into())
+  }
+
+  pub fn while_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("whileStatement.blockPadding", value.to_string().into())
+  }
+
+  pub fn with_statement_block_padding(&mut self, value: BlockPadding) -> &mut Self {
+    self.insert("withStatement.blockPadding", value.to_string().into())
   }
 
   /* next control flow position */
@@ -826,6 +1174,10 @@ impl ConfigurationBuilder {
     self.insert("conditionalType.operatorPosition", value.to_string().into())
   }
 
+  pub fn union_and_intersection_type_operator_position(&mut self, value: OperatorPosition) -> &mut Self {
+    self.insert("unionAndIntersectionType.operatorPosition", value.to_string().into())
+  }
+
   /* single body position */
 
   pub fn if_statement_single_body_position(&mut self, value: SameOrNextLinePosition) -> &mut Self {
@@ -846,6 +1198,10 @@ impl ConfigurationBuilder {
 
   pub fn while_statement_single_body_position(&mut self, value: SameOrNextLinePosition) -> &mut Self {
     self.insert("whileStatement.singleBodyPosition", value.to_string().into())
+  }
+
+  pub fn with_statement_single_body_position(&mut self, value: SameOrNextLinePosition) -> &mut Self {
+    self.insert("withStatement.singleBodyPosition", value.to_string().into())
   }
 
   /* trailing commas */
@@ -921,6 +1277,10 @@ impl ConfigurationBuilder {
     self.insert("whileStatement.useBraces", value.to_string().into())
   }
 
+  pub fn with_statement_use_braces(&mut self, value: UseBraces) -> &mut Self {
+    self.insert("withStatement.useBraces", value.to_string().into())
+  }
+
   /* prefer single line */
 
   pub fn array_expression_prefer_single_line(&mut self, value: bool) -> &mut Self {
@@ -973,6 +1333,17 @@ impl ConfigurationBuilder {
 
   pub fn jsx_element_prefer_single_line(&mut self, value: bool) -> &mut Self {
     self.insert("jsxElement.preferSingleLine", value.into())
+  }
+
+  /// Whether to keep a JSX expression container's braces beside its expression
+  /// when there's a newline after the open brace.
+  ///
+  /// * `true` - Keeps the braces beside the expression. Ex. `{value}`
+  /// * `false` - Puts the braces on their own lines when there's a newline after the open brace.
+  ///
+  /// Default: The global `preferSingleLine` value when set, otherwise `true`.
+  pub fn jsx_expression_container_prefer_single_line(&mut self, value: bool) -> &mut Self {
+    self.insert("jsxExpressionContainer.preferSingleLine", value.into())
   }
 
   pub fn mapped_type_prefer_single_line(&mut self, value: bool) -> &mut Self {
@@ -1077,6 +1448,10 @@ impl ConfigurationBuilder {
     self.insert("whileStatement.spaceAround", value.into())
   }
 
+  pub fn with_statement_space_around(&mut self, value: bool) -> &mut Self {
+    self.insert("withStatement.spaceAround", value.into())
+  }
+
   #[cfg(test)]
   pub(super) fn get_inner_config(&self) -> ConfigKeyMap {
     self.config.clone()
@@ -1104,35 +1479,48 @@ mod tests {
       .quote_style(QuoteStyle::AlwaysDouble)
       .jsx_quote_style(JsxQuoteStyle::PreferSingle)
       .jsx_multi_line_parens(JsxMultiLineParens::Never)
+      .jsx_sort_class_names(JsxClassNamesSortConfig {
+        functions: vec!["cn".to_string()],
+        prefix: Some("tw".to_string()),
+        ..JsxClassNamesSortOrder::Tailwind.into()
+      })
       .jsx_force_new_lines_surrounding_content(true)
+      .tagged_template_format_embedded(false)
+      .tagged_template_embedded_languages([("html", "html"), ("styled", "less")])
       .jsx_bracket_position(SameOrNextLinePosition::Maintain)
       .jsx_opening_element_bracket_position(SameOrNextLinePosition::Maintain)
       .jsx_self_closing_element_bracket_position(SameOrNextLinePosition::Maintain)
-      .semi_colons(SemiColons::Prefer)
+      .decorators_position(SameOrNextLinePosition::Maintain)
+      .semicolons(Semicolons::Prefer)
       .brace_position(BracePosition::NextLine)
       .next_control_flow_position(NextControlFlowPosition::SameLine)
       .operator_position(OperatorPosition::SameLine)
       .single_body_position(SameOrNextLinePosition::SameLine)
       .trailing_commas(TrailingCommas::Never)
       .file_indent_level(1)
+      .max_blank_lines(2)
+      .block_padding(BlockPadding::Maintain)
       .use_braces(UseBraces::WhenNotSingleLine)
       .quote_props(QuoteProps::AsNeeded)
       .prefer_hanging(false)
+      .align_assignments(true)
       /* situational */
       .arrow_function_use_parentheses(UseParentheses::Maintain)
       .binary_expression_line_per_expression(false)
       .conditional_expression_line_per_expression(true)
+      .conditional_type_line_per_expression(true)
       .member_expression_line_per_expression(false)
-      .type_literal_separator_kind(SemiColonOrComma::Comma)
-      .type_literal_separator_kind_single_line(SemiColonOrComma::Comma)
-      .type_literal_separator_kind_multi_line(SemiColonOrComma::Comma)
+      .type_literal_separator_kind(SemicolonOrComma::Comma)
+      .type_literal_separator_kind_single_line(SemicolonOrComma::Comma)
+      .type_literal_separator_kind_multi_line(SemicolonOrComma::Comma)
       /* sorting */
       .module_sort_import_declarations(SortOrder::Maintain)
       .module_sort_export_declarations(SortOrder::Maintain)
+      .module_blank_lines_after_imports(2)
       .import_declaration_sort_named_imports(SortOrder::Maintain)
       .export_declaration_sort_named_exports(SortOrder::Maintain)
       .import_declaration_sort_type_only_imports(NamedTypeImportsExportsOrder::First)
-      .export_declaration_sort_type_only_exports(NamedTypeImportsExportsOrder::None)
+      .export_declaration_sort_type_only_exports(NamedTypeImportsExportsOrder::Inline)
       /* ignore comments */
       .ignore_node_comment_text("ignore")
       .ignore_file_comment_text("ignore-file")
@@ -1159,6 +1547,7 @@ mod tests {
       .switch_statement_brace_position(BracePosition::NextLine)
       .try_statement_brace_position(BracePosition::NextLine)
       .while_statement_brace_position(BracePosition::NextLine)
+      .with_statement_brace_position(BracePosition::NextLine)
       /* prefer hanging */
       .arguments_prefer_hanging(PreferHanging::OnlySingleItem)
       .array_expression_prefer_hanging(PreferHanging::OnlySingleItem)
@@ -1184,8 +1573,41 @@ mod tests {
       .union_and_intersection_type_prefer_hanging(true)
       .variable_statement_prefer_hanging(true)
       .while_statement_prefer_hanging(true)
+      .with_statement_prefer_hanging(true)
+      /* situational indentation */
+      .conditional_expression_indent_branch_content(false)
+      .conditional_expression_use_nested_indentation(false)
+      .conditional_type_use_nested_indentation(false)
       /* member spacing */
+      .class_declaration_member_spacing(MemberSpacing::Maintain)
+      .class_expression_member_spacing(MemberSpacing::Maintain)
       .enum_declaration_member_spacing(MemberSpacing::Maintain)
+      .interface_declaration_member_spacing(MemberSpacing::Maintain)
+      .type_literal_member_spacing(MemberSpacing::Maintain)
+      /* block padding */
+      .class_declaration_block_padding(BlockPadding::Maintain)
+      .class_expression_block_padding(BlockPadding::Maintain)
+      .enum_declaration_block_padding(BlockPadding::Maintain)
+      .interface_declaration_block_padding(BlockPadding::Maintain)
+      .module_declaration_block_padding(BlockPadding::Maintain)
+      .arrow_function_block_padding(BlockPadding::Maintain)
+      .constructor_block_padding(BlockPadding::Maintain)
+      .do_while_statement_block_padding(BlockPadding::Maintain)
+      .for_in_statement_block_padding(BlockPadding::Maintain)
+      .for_of_statement_block_padding(BlockPadding::Maintain)
+      .for_statement_block_padding(BlockPadding::Maintain)
+      .function_declaration_block_padding(BlockPadding::Maintain)
+      .function_expression_block_padding(BlockPadding::Maintain)
+      .get_accessor_block_padding(BlockPadding::Maintain)
+      .if_statement_block_padding(BlockPadding::Maintain)
+      .method_block_padding(BlockPadding::Maintain)
+      .set_accessor_block_padding(BlockPadding::Maintain)
+      .static_block_block_padding(BlockPadding::Maintain)
+      .switch_case_block_padding(BlockPadding::Maintain)
+      .switch_statement_block_padding(BlockPadding::Maintain)
+      .try_statement_block_padding(BlockPadding::Maintain)
+      .while_statement_block_padding(BlockPadding::Maintain)
+      .with_statement_block_padding(BlockPadding::Maintain)
       /* next control flow position */
       .if_statement_next_control_flow_position(NextControlFlowPosition::SameLine)
       .try_statement_next_control_flow_position(NextControlFlowPosition::SameLine)
@@ -1194,12 +1616,14 @@ mod tests {
       .binary_expression_operator_position(OperatorPosition::SameLine)
       .conditional_expression_operator_position(OperatorPosition::SameLine)
       .conditional_type_operator_position(OperatorPosition::SameLine)
+      .union_and_intersection_type_operator_position(OperatorPosition::SameLine)
       /* single body position */
       .if_statement_single_body_position(SameOrNextLinePosition::SameLine)
       .for_statement_single_body_position(SameOrNextLinePosition::SameLine)
       .for_in_statement_single_body_position(SameOrNextLinePosition::SameLine)
       .for_of_statement_single_body_position(SameOrNextLinePosition::SameLine)
       .while_statement_single_body_position(SameOrNextLinePosition::SameLine)
+      .with_statement_single_body_position(SameOrNextLinePosition::SameLine)
       /* trailing commas */
       .arguments_trailing_commas(TrailingCommas::Never)
       .parameters_trailing_commas(TrailingCommas::Never)
@@ -1219,6 +1643,7 @@ mod tests {
       .for_in_statement_use_braces(UseBraces::Always)
       .for_of_statement_use_braces(UseBraces::Always)
       .while_statement_use_braces(UseBraces::Always)
+      .with_statement_use_braces(UseBraces::Always)
       /* prefer single line */
       .array_expression_prefer_single_line(false)
       .array_pattern_prefer_single_line(false)
@@ -1233,6 +1658,7 @@ mod tests {
       .import_declaration_prefer_single_line(false)
       .jsx_attributes_prefer_single_line(false)
       .jsx_element_prefer_single_line(false)
+      .jsx_expression_container_prefer_single_line(false)
       .mapped_type_prefer_single_line(false)
       .member_expression_prefer_single_line(false)
       .object_expression_prefer_single_line(false)
@@ -1252,6 +1678,7 @@ mod tests {
       .import_declaration_force_multi_line(ForceMultiLine::Always)
       /* space settings */
       .binary_expression_space_surrounding_bitwise_and_arithmetic_operator(true)
+      .catch_clause_space_after_catch_keyword(true)
       .comment_line_force_space_after_slashes(false)
       .construct_signature_space_after_new_keyword(true)
       .constructor_space_before_parentheses(true)
@@ -1259,7 +1686,7 @@ mod tests {
       .do_while_statement_space_after_while_keyword(true)
       .export_declaration_space_surrounding_named_exports(true)
       .for_statement_space_after_for_keyword(true)
-      .for_statement_space_after_semi_colons(true)
+      .for_statement_space_after_semicolons(true)
       .for_in_statement_space_after_for_keyword(true)
       .for_of_statement_space_after_for_keyword(true)
       .function_declaration_space_before_parentheses(true)
@@ -1271,15 +1698,19 @@ mod tests {
       .jsx_expression_container_space_surrounding_expression(true)
       .jsx_self_closing_element_space_before_slash(true)
       .method_space_before_parentheses(true)
+      .mapped_type_space_surrounding_properties(false)
       .object_expression_space_surrounding_properties(false)
       .object_pattern_space_surrounding_properties(false)
       .set_accessor_space_before_parentheses(true)
+      .space_after_control_flow_keyword(true)
       .space_surrounding_properties(false)
+      .switch_statement_space_after_switch_keyword(true)
       .tagged_template_space_before_literal(false)
       .type_annotation_space_before_colon(true)
       .type_assertion_space_before_expression(true)
       .type_literal_space_surrounding_properties(false)
       .while_statement_space_after_while_keyword(true)
+      .with_statement_space_after_with_keyword(true)
       /* space around */
       .arguments_space_around(true)
       .array_expression_space_around(true)
@@ -1294,10 +1725,11 @@ mod tests {
       .paren_expression_space_around(true)
       .switch_statement_space_around(true)
       .tuple_type_space_around(true)
-      .while_statement_space_around(true);
+      .while_statement_space_around(true)
+      .with_statement_space_around(true);
 
     let inner_config = config.get_inner_config();
-    assert_eq!(inner_config.len(), 182);
+    assert_eq!(inner_config.len(), 233);
     let diagnostics = resolve_config(inner_config, &Default::default()).diagnostics;
     assert_eq!(diagnostics.len(), 0);
   }

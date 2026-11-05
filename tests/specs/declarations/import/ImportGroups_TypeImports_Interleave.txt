@@ -1,0 +1,26 @@
+~~ {
+  "lineWidth": 80,
+  "module.typeImports": "interleave",
+  "module.importGroups": [
+    { "match": "external" }
+  ]
+} ~~
+== typeImports interleave mixes type and value imports in external group ==
+import { a } from "alpha";
+import type { B } from "beta";
+import { c } from "gamma";
+
+[expect]
+import { a } from "alpha";
+import type { B } from "beta";
+import { c } from "gamma";
+
+== typeImports interleave sorts the imports of the same module by kind ==
+import type { B } from "alpha";
+import { a } from "alpha";
+import * as ns from "alpha";
+
+[expect]
+import type { B } from "alpha";
+import * as ns from "alpha";
+import { a } from "alpha";

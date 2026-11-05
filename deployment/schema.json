@@ -15,7 +15,7 @@
         "description": "Uses spaces for indentation."
       }]
     },
-    "semiColons": {
+    "semicolons": {
       "description": "How semi-colons should be used.",
       "type": "string",
       "default": "prefer",
@@ -60,6 +60,91 @@
         "description": "Prefers using single quotes except in scenarios where the string contains more single quotes than double quotes."
       }]
     },
+    "jsx.sortClassNames": {
+      "description": "How to sort JSX class attribute values, which is either only the kind of sorting or an object with the kind and its options.",
+      "default": "maintain",
+      "oneOf": [{
+        "$ref": "#/definitions/jsx.sortClassNames.kind"
+      }, {
+        "type": "object",
+        "required": ["kind"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/definitions/jsx.sortClassNames.kind"
+          },
+          "functions": {
+            "description": "Leading function or tag identifiers whose string arguments and template literals should be sorted as class names (ex. [\"cn\", \"clsx\"]).",
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "string"
+            }
+          },
+          "attributes": {
+            "description": "Attributes whose values should be sorted as class names in addition to \"class\" and \"className\".",
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "string"
+            }
+          },
+          "preserveWhitespace": {
+            "description": "Whether to keep the whitespace between class names as is when sorting them.",
+            "type": "boolean",
+            "default": false
+          },
+          "preserveDuplicates": {
+            "description": "Whether to keep duplicate class names when sorting them.",
+            "type": "boolean",
+            "default": false
+          },
+          "prefix": {
+            "description": "The prefix the project's Tailwind classes have (ex. \"tw\" when classes look like \"tw:flex\").",
+            "type": "string"
+          },
+          "theme": {
+            "description": "The theme variables the project adds to Tailwind's default theme and their values, which is what's in \"@theme\" in its CSS (ex. { \"--breakpoint-3xl\": \"120rem\", \"--color-brand\": \"#f00\" }).",
+            "type": "object",
+            "default": {},
+            "additionalProperties": {
+              "type": ["string", "integer"]
+            }
+          },
+          "variants": {
+            "description": "The names of the project's custom variants in the order they're defined, which is what it has an \"@custom-variant\" for in its CSS.",
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "string"
+            }
+          },
+          "utilities": {
+            "description": "The names of the project's custom utilities along with the CSS properties each sets, which is what it has an \"@utility\" for in its CSS (ex. { \"btn\": [\"display\", \"padding\"], \"tab-*\": [\"tab-size\"] }).",
+            "type": "object",
+            "default": {},
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }]
+    },
+    "jsx.sortClassNames.kind": {
+      "description": "How to sort JSX class attribute values.",
+      "type": "string",
+      "default": "maintain",
+      "oneOf": [{
+        "const": "maintain",
+        "description": "Maintains the current class name ordering."
+      }, {
+        "const": "tailwind",
+        "description": "Sorts class names using Tailwind CSS ordering."
+      }]
+    },
     "quoteProps": {
       "description": "Change when properties in objects are quoted.",
       "type": "string",
@@ -81,7 +166,7 @@
       "default": "prefer",
       "oneOf": [{
         "const": "never",
-        "description": "Never wrap JSX with parentheses."
+        "description": "Never wrap JSX with parentheses and remove existing ones, except when they have comments or are needed (ex. `(<div />).props`)."
       }, {
         "const": "prefer",
         "description": "Prefer wrapping with parentheses in most scenarios, except in function arguments and JSX attributes."
@@ -117,6 +202,21 @@
         "description": "Forces the end angle bracket to be on the next line."
       }]
     },
+    "decorators.position": {
+      "description": "Whether a class or class member should be on the same or next line as its decorators.",
+      "type": "string",
+      "default": "maintain",
+      "oneOf": [{
+        "const": "maintain",
+        "description": "Maintains whether it's on the same line as its decorators."
+      }, {
+        "const": "sameLine",
+        "description": "Forces it to be on the same line as its decorators."
+      }, {
+        "const": "nextLine",
+        "description": "Forces it to be on the next line after its decorators."
+      }]
+    },
     "newLineKind": {
       "description": "The kind of newline to use.",
       "type": "string",
@@ -130,9 +230,6 @@
       }, {
         "const": "lf",
         "description": "Uses line feed."
-      }, {
-        "const": "system",
-        "description": "Uses the system standard (ex. crlf on Windows)."
       }]
     },
     "useBraces": {
@@ -270,6 +367,30 @@
         "description": ""
       }]
     },
+    "preferSingleLineDefaultTrue": {
+      "description": "If code should revert back from being on multiple lines to being on a single line when able. Defaults to the global `preferSingleLine` value when it's set and otherwise `true`.",
+      "type": "boolean",
+      "default": true,
+      "oneOf": [{
+        "const": true,
+        "description": ""
+      }, {
+        "const": false,
+        "description": ""
+      }]
+    },
+    "jsxExpressionContainer.preferSingleLine": {
+      "description": "Whether to keep a JSX expression container's braces beside its expression when there's a newline between the open brace and the expression. Only the newline after the open brace is checked, so when this is `false` the close brace goes on its own line even if it was beside the expression. Defaults to the global `preferSingleLine` value when it's set and otherwise `true`.",
+      "type": "boolean",
+      "default": true,
+      "oneOf": [{
+        "const": true,
+        "description": "Keeps the braces beside the expression even when there's a newline after the open brace. Ex. `{value}`"
+      }, {
+        "const": false,
+        "description": "Puts the braces on their own lines with the expression indented between them when there's a newline after the open brace."
+      }]
+    },
     "forceSingleLine": {
       "description": "If code should be forced to be on a single line if able.",
       "type": "boolean",
@@ -300,7 +421,7 @@
     "typeOnlyImportsExportsSortOrder": {
       "description": "The kind of sort ordering to use for typed imports and exports.",
       "type": "string",
-      "default": "none",
+      "default": "inline",
       "oneOf": [{
         "const": "first",
         "description": "Puts type-only named imports and exports first."
@@ -308,8 +429,8 @@
         "const": "last",
         "description": "Puts type-only named imports and exports last."
       }, {
-        "const": "none",
-        "description": "Does not sort based on if a type-only named import or export."
+        "const": "inline",
+        "description": "Does not sort based on if a type-only named import or export, so they're sorted inline with the others."
       }]
     },
     "sortOrder": {
@@ -378,6 +499,42 @@
         "description": "Maintains the line breaks as written by the programmer."
       }]
     },
+    "conditionalType.linePerExpression": {
+      "description": "Whether to force a line per expression when spanning multiple lines.",
+      "type": "boolean",
+      "default": false,
+      "oneOf": [{
+        "const": true,
+        "description": "Formats with each part on a new line."
+      }, {
+        "const": false,
+        "description": "Maintains the line breaks as written by the programmer."
+      }]
+    },
+    "conditionalExpression.indentBranchContent": {
+      "description": "Whether to indent the hanging content of a conditional expression's true or false part past the start of that part when its `?` or `:` starts the line (ex. the properties of `? {` are indented past the `{` instead of lined up with it). This has no effect when the indent width is greater than 2 because the content is already past the start of the part.",
+      "type": "boolean",
+      "default": false,
+      "oneOf": [{
+        "const": true,
+        "description": "Indents the hanging content past the start of the part (ex. `? {` then `    prop: 1,` then `  }` at an indent width of 2)."
+      }, {
+        "const": false,
+        "description": "Indents the hanging content once from the start of the line, so it lines up with the start of the part when the indent width is 2."
+      }]
+    },
+    "useNestedIndentation": {
+      "description": "Whether to indent a nested conditional in the true or false part more than its parent, so it formats as a tree.",
+      "type": "boolean",
+      "default": false,
+      "oneOf": [{
+        "const": true,
+        "description": "Indents nested conditionals."
+      }, {
+        "const": false,
+        "description": "Keeps the false part of a nested conditional at the same indentation as its parent."
+      }]
+    },
     "memberExpression.linePerExpression": {
       "description": "Whether to force a line per expression when spanning multiple lines.",
       "type": "boolean",
@@ -390,8 +547,36 @@
         "description": "Maintains the line breaks as written by the programmer."
       }]
     },
-    "enumDeclaration.memberSpacing": {
-      "description": "How to space the members of an enum.",
+    "taggedTemplate.formatEmbedded": {
+      "description": "Whether to format the text of tagged templates whose tag is in `taggedTemplate.embeddedLanguages` (ex. html`...` and css`...`) with the plugin dprint uses for the language's file extension. A template is left as is when no plugin formats the extension.",
+      "type": "boolean",
+      "default": true,
+      "oneOf": [{
+        "const": true,
+        "description": "Formats the text of the tagged templates in `taggedTemplate.embeddedLanguages`."
+      }, {
+        "const": false,
+        "description": "Leaves the text of tagged templates as is."
+      }]
+    },
+    "taggedTemplate.embeddedLanguages": {
+      "description": "Map of a tagged template's tag to the file extension of the language its text is formatted as, which replaces the defaults. The styled-components patterns (ex. styled.div`...` and styled(Button)`...`) use the `css` entry. The text of css is formatted as Less by default because the placeholders of its expressions are Less variables.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {
+        "css": "less",
+        "gql": "graphql",
+        "graphql": "graphql",
+        "html": "html",
+        "sql": "sql",
+        "svg": "svg",
+        "xml": "xml"
+      }
+    },
+    "memberSpacing": {
+      "description": "How to space the members of a class, enum, interface, or type literal.",
       "type": "string",
       "default": "maintain",
       "oneOf": [{
@@ -405,16 +590,46 @@
         "description": "Maintains whether a newline or blankline is used."
       }]
     },
+    "blockPadding": {
+      "description": "Whether to keep blank lines at the start and end of a block.",
+      "type": "string",
+      "default": "remove",
+      "oneOf": [{
+        "const": "remove",
+        "description": "Removes the blank lines at the start and end of a block."
+      }, {
+        "const": "maintain",
+        "description": "Maintains the blank lines at the start and end of a block."
+      }, {
+        "const": "always",
+        "description": "Forces a blank line at the start and end of a block that isn't empty."
+      }]
+    },
     "typeLiteral.separatorKind": {
       "description": "The kind of separator to use in type literals.",
       "type": "string",
-      "default": "semiColon",
+      "default": "semicolon",
       "oneOf": [{
-        "const": "semiColon",
+        "const": "semicolon",
         "description": "Use semi-colons."
+      }, {
+        "const": "semiColon",
+        "description": "Use semi-colons. Same as \"semicolon\"."
       }, {
         "const": "comma",
         "description": "Use commas."
+      }]
+    },
+    "alignAssignments": {
+      "description": "Whether to align the values of consecutive variable statements, object properties, class properties, enum members, and interface and type literal properties. A blank line or a member on multiple lines ends the group, and the alignment never makes a line go over the line width.",
+      "type": "boolean",
+      "default": false,
+      "oneOf": [{
+        "const": true,
+        "description": "Ex. `const a   = 1;` and `const bbb = 2;`"
+      }, {
+        "const": false,
+        "description": "Ex. `const a = 1;` and `const bbb = 2;`"
       }]
     },
     "spaceAround": {
@@ -429,6 +644,18 @@
         "description": "Ex. `myFunction(true)`"
       }]
     },
+    "spaceAfterControlFlowKeyword": {
+      "description": "Whether to add a space after the keyword of a control flow statement and before its open paren. This is the default for the `spaceAfter...Keyword` options of the `if`, `for`, `for...in`, `for...of`, `while`, `do...while`, `with` and `switch` statements and the catch clause.",
+      "type": "boolean",
+      "default": true,
+      "oneOf": [{
+        "const": true,
+        "description": "Ex. `if (true)`"
+      }, {
+        "const": false,
+        "description": "Ex. `if(true)`"
+      }]
+    },
     "spaceSurroundingProperties": {
       "description": "Whether to add a space surrounding the properties of single line object-like nodes.",
       "type": "boolean",
@@ -439,6 +666,18 @@
       }, {
         "const": false,
         "description": "Ex. `{key: value}`"
+      }]
+    },
+    "mappedType.spaceSurroundingProperties": {
+      "description": "Whether to add a space surrounding the properties of a single line mapped type.",
+      "type": "boolean",
+      "default": true,
+      "oneOf": [{
+        "const": true,
+        "description": "Ex. `type Test = { [key in Type]: string }`"
+      }, {
+        "const": false,
+        "description": "Ex. `type Test = {[key in Type]: string}`"
       }]
     },
     "objectExpression.spaceSurroundingProperties": {
@@ -487,6 +726,18 @@
       }, {
         "const": false,
         "description": "Ex. `1+2`"
+      }]
+    },
+    "catchClause.spaceAfterCatchKeyword": {
+      "description": "Whether to add a space after the `catch` keyword in a catch clause.",
+      "type": "boolean",
+      "default": true,
+      "oneOf": [{
+        "const": true,
+        "description": "Ex. `catch (err)`"
+      }, {
+        "const": false,
+        "description": "Ex. `catch(err)`"
       }]
     },
     "commentLine.forceSpaceAfterSlashes": {
@@ -574,15 +825,15 @@
       }]
     },
     "forOfStatement.spaceAfterForKeyword": {
-      "description": "Whether to add a space after the `for` keyword in a \"for of\" statement.",
+      "description": "Whether to add a space after the `for` keyword, or the `await` keyword in a `for await`, in a \"for of\" statement.",
       "type": "boolean",
       "default": true,
       "oneOf": [{
         "const": true,
-        "description": "Ex. `for (const value of myArray)`"
+        "description": "Ex. `for (const value of myArray)` or `for await (const value of myArray)`"
       }, {
         "const": false,
-        "description": "Ex. `for(const value of myArray)`"
+        "description": "Ex. `for(const value of myArray)` or `for await(const value of myArray)`"
       }]
     },
     "forStatement.spaceAfterForKeyword": {
@@ -597,7 +848,7 @@
         "description": "Ex. `for(let i = 0; i < 5; i++)`"
       }]
     },
-    "forStatement.spaceAfterSemiColons": {
+    "forStatement.spaceAfterSemicolons": {
       "description": "Whether to add a space after the semi-colons in a \"for\" statement.",
       "type": "boolean",
       "default": true,
@@ -643,6 +894,18 @@
       }, {
         "const": false,
         "description": "Ex. `function<T>()`"
+      }]
+    },
+    "functionExpression.flatIife": {
+      "description": "Whether to skip indenting the body of a function expression used in an IIFE.",
+      "type": "boolean",
+      "default": false,
+      "oneOf": [{
+        "const": true,
+        "description": "Does not indent the body of the function in `(function() { ... })();`."
+      }, {
+        "const": false,
+        "description": "Indents the body as normal."
       }]
     },
     "getAccessor.spaceBeforeParentheses": {
@@ -694,7 +957,7 @@
       }]
     },
     "jsxExpressionContainer.spaceSurroundingExpression": {
-      "description": "Whether to add a space surrounding the expression of a JSX container.",
+      "description": "Whether to add a space surrounding the expression of a JSX container. No space is added around an object or array literal (ex. `{{ value: true }}`).",
       "type": "boolean",
       "default": false,
       "oneOf": [{
@@ -727,6 +990,18 @@
       }, {
         "const": false,
         "description": "Ex. `set myProp(value: string)`"
+      }]
+    },
+    "switchStatement.spaceAfterSwitchKeyword": {
+      "description": "Whether to add a space after the `switch` keyword in a switch statement.",
+      "type": "boolean",
+      "default": true,
+      "oneOf": [{
+        "const": true,
+        "description": "Ex. `switch (value)`"
+      }, {
+        "const": false,
+        "description": "Ex. `switch(value)`"
       }]
     },
     "taggedTemplate.spaceBeforeLiteral": {
@@ -776,13 +1051,21 @@
         "const": false,
         "description": "Ex. `while(true)`"
       }]
+    },
+    "withStatement.spaceAfterWithKeyword": {
+      "description": "Whether to add a space after the `with` keyword in a with statement.",
+      "type": "boolean",
+      "default": true,
+      "oneOf": [{
+        "const": true,
+        "description": "Ex. `with (obj)`"
+      }, {
+        "const": false,
+        "description": "Ex. `with(obj)`"
+      }]
     }
   },
   "properties": {
-    "locked": {
-      "description": "Whether the configuration is not allowed to be overridden or extended.",
-      "type": "boolean"
-    },
     "lineWidth": {
       "description": "The width of a line the printer will try to stay under. Note that the printer may exceed this width in certain cases.",
       "default": 120,
@@ -796,8 +1079,8 @@
     "useTabs": {
       "$ref": "#/definitions/useTabs"
     },
-    "semiColons": {
-      "$ref": "#/definitions/semiColons"
+    "semicolons": {
+      "$ref": "#/definitions/semicolons"
     },
     "quoteStyle": {
       "$ref": "#/definitions/quoteStyle"
@@ -813,6 +1096,17 @@
     },
     "bracePosition": {
       "$ref": "#/definitions/bracePosition"
+    },
+    "blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "maxBlankLines": {
+      "description": "The maximum number of consecutive blank lines to keep.",
+      "default": 1,
+      "type": "number"
+    },
+    "alignAssignments": {
+      "$ref": "#/definitions/alignAssignments"
     },
     "singleBodyPosition": {
       "$ref": "#/definitions/singleBodyPosition"
@@ -841,6 +1135,21 @@
     "binaryExpression.linePerExpression": {
       "$ref": "#/definitions/binaryExpression.linePerExpression"
     },
+    "conditionalExpression.linePerExpression": {
+      "$ref": "#/definitions/conditionalExpression.linePerExpression"
+    },
+    "conditionalType.linePerExpression": {
+      "$ref": "#/definitions/conditionalType.linePerExpression"
+    },
+    "conditionalExpression.indentBranchContent": {
+      "$ref": "#/definitions/conditionalExpression.indentBranchContent"
+    },
+    "conditionalExpression.useNestedIndentation": {
+      "$ref": "#/definitions/useNestedIndentation"
+    },
+    "conditionalType.useNestedIndentation": {
+      "$ref": "#/definitions/useNestedIndentation"
+    },
     "jsx.bracketPosition": {
       "$ref": "#/definitions/jsx.bracketPosition"
     },
@@ -850,6 +1159,9 @@
     "jsxSelfClosingElement.bracketPosition": {
       "$ref": "#/definitions/jsx.bracketPosition"
     },
+    "decorators.position": {
+      "$ref": "#/definitions/decorators.position"
+    },
     "jsx.forceNewLinesSurroundingContent": {
       "$ref": "#/definitions/jsx.forceNewLinesSurroundingContent"
     },
@@ -858,6 +1170,9 @@
     },
     "jsx.multiLineParens": {
       "$ref": "#/definitions/jsx.multiLineParens"
+    },
+    "jsx.sortClassNames": {
+      "$ref": "#/definitions/jsx.sortClassNames"
     },
     "memberExpression.linePerExpression": {
       "$ref": "#/definitions/memberExpression.linePerExpression"
@@ -871,8 +1186,26 @@
     "typeLiteral.separatorKind.multiLine": {
       "$ref": "#/definitions/typeLiteral.separatorKind"
     },
+    "taggedTemplate.formatEmbedded": {
+      "$ref": "#/definitions/taggedTemplate.formatEmbedded"
+    },
+    "taggedTemplate.embeddedLanguages": {
+      "$ref": "#/definitions/taggedTemplate.embeddedLanguages"
+    },
+    "classDeclaration.memberSpacing": {
+      "$ref": "#/definitions/memberSpacing"
+    },
+    "classExpression.memberSpacing": {
+      "$ref": "#/definitions/memberSpacing"
+    },
     "enumDeclaration.memberSpacing": {
-      "$ref": "#/definitions/enumDeclaration.memberSpacing"
+      "$ref": "#/definitions/memberSpacing"
+    },
+    "interfaceDeclaration.memberSpacing": {
+      "$ref": "#/definitions/memberSpacing"
+    },
+    "typeLiteral.memberSpacing": {
+      "$ref": "#/definitions/memberSpacing"
     },
     "spaceAround": {
       "$ref": "#/definitions/spaceAround"
@@ -919,8 +1252,17 @@
     "whileStatement.spaceAround": {
       "$ref": "#/definitions/spaceAround"
     },
+    "withStatement.spaceAround": {
+      "$ref": "#/definitions/spaceAround"
+    },
+    "spaceAfterControlFlowKeyword": {
+      "$ref": "#/definitions/spaceAfterControlFlowKeyword"
+    },
     "spaceSurroundingProperties": {
       "$ref": "#/definitions/spaceSurroundingProperties"
+    },
+    "mappedType.spaceSurroundingProperties": {
+      "$ref": "#/definitions/mappedType.spaceSurroundingProperties"
     },
     "objectExpression.spaceSurroundingProperties": {
       "$ref": "#/definitions/objectExpression.spaceSurroundingProperties"
@@ -933,6 +1275,9 @@
     },
     "binaryExpression.spaceSurroundingBitwiseAndArithmeticOperator": {
       "$ref": "#/definitions/binaryExpression.spaceSurroundingBitwiseAndArithmeticOperator"
+    },
+    "catchClause.spaceAfterCatchKeyword": {
+      "$ref": "#/definitions/catchClause.spaceAfterCatchKeyword"
     },
     "commentLine.forceSpaceAfterSlashes": {
       "$ref": "#/definitions/commentLine.forceSpaceAfterSlashes"
@@ -961,8 +1306,8 @@
     "forStatement.spaceAfterForKeyword": {
       "$ref": "#/definitions/forStatement.spaceAfterForKeyword"
     },
-    "forStatement.spaceAfterSemiColons": {
-      "$ref": "#/definitions/forStatement.spaceAfterSemiColons"
+    "forStatement.spaceAfterSemicolons": {
+      "$ref": "#/definitions/forStatement.spaceAfterSemicolons"
     },
     "functionDeclaration.spaceBeforeParentheses": {
       "$ref": "#/definitions/functionDeclaration.spaceBeforeParentheses"
@@ -972,6 +1317,9 @@
     },
     "functionExpression.spaceAfterFunctionKeyword": {
       "$ref": "#/definitions/functionExpression.spaceAfterFunctionKeyword"
+    },
+    "functionExpression.flatIife": {
+      "$ref": "#/definitions/functionExpression.flatIife"
     },
     "getAccessor.spaceBeforeParentheses": {
       "$ref": "#/definitions/getAccessor.spaceBeforeParentheses"
@@ -994,6 +1342,9 @@
     "setAccessor.spaceBeforeParentheses": {
       "$ref": "#/definitions/setAccessor.spaceBeforeParentheses"
     },
+    "switchStatement.spaceAfterSwitchKeyword": {
+      "$ref": "#/definitions/switchStatement.spaceAfterSwitchKeyword"
+    },
     "taggedTemplate.spaceBeforeLiteral": {
       "$ref": "#/definitions/taggedTemplate.spaceBeforeLiteral"
     },
@@ -1006,11 +1357,67 @@
     "whileStatement.spaceAfterWhileKeyword": {
       "$ref": "#/definitions/whileStatement.spaceAfterWhileKeyword"
     },
+    "withStatement.spaceAfterWithKeyword": {
+      "$ref": "#/definitions/withStatement.spaceAfterWithKeyword"
+    },
     "module.sortImportDeclarations": {
       "$ref": "#/definitions/sortOrder"
     },
+    "module.blankLinesAfterImports": {
+      "description": "The number of blank lines to force after the import declarations at the top of a module. When not set, maintains the blank lines up to `maxBlankLines`.",
+      "type": "number"
+    },
     "module.sortExportDeclarations": {
       "$ref": "#/definitions/sortOrder"
+    },
+    "module.importGroups": {
+      "description": "Ordered list of import groups, separated by blank lines. Empty disables the feature.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "match": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["builtin", "external", "parent", "sibling", "index", "type", "unknown"]
+              },
+              {
+                "type": "object",
+                "required": ["pattern"],
+                "properties": {
+                  "pattern": { "type": "string" }
+                }
+              },
+              {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "enum": ["builtin", "external", "parent", "sibling", "index", "type", "unknown"]
+                    },
+                    { "type": "object", "required": ["pattern"], "properties": { "pattern": { "type": "string" } } }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "module.typeImports": {
+      "description": "How type-only imports are classified by module.importGroups.",
+      "type": "string",
+      "default": "separate",
+      "enum": ["separate", "interleave"]
+    },
+    "module.importGroupsNewlinesBetween": {
+      "description": "How blank lines are handled between imports when module.importGroups is enabled. Mirrors ESLint import/order's newlines-between.",
+      "type": "string",
+      "default": "always",
+      "enum": ["always", "alwaysAndInsideGroups", "never", "ignore"]
     },
     "exportDeclaration.sortNamedExports": {
       "$ref": "#/definitions/sortOrder"
@@ -1049,8 +1456,80 @@
     "whileStatement.useBraces": {
       "$ref": "#/definitions/useBraces"
     },
+    "withStatement.useBraces": {
+      "$ref": "#/definitions/useBraces"
+    },
     "arrowFunction.bracePosition": {
       "$ref": "#/definitions/bracePosition"
+    },
+    "classDeclaration.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "classExpression.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "enumDeclaration.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "interfaceDeclaration.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "moduleDeclaration.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "arrowFunction.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "constructor.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "doWhileStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "forInStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "forOfStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "forStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "functionDeclaration.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "functionExpression.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "getAccessor.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "ifStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "method.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "setAccessor.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "staticBlock.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "switchCase.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "switchStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "tryStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "whileStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
+    },
+    "withStatement.blockPadding": {
+      "$ref": "#/definitions/blockPadding"
     },
     "classDeclaration.bracePosition": {
       "$ref": "#/definitions/bracePosition"
@@ -1115,6 +1594,9 @@
     "whileStatement.bracePosition": {
       "$ref": "#/definitions/bracePosition"
     },
+    "withStatement.bracePosition": {
+      "$ref": "#/definitions/bracePosition"
+    },
     "forInStatement.singleBodyPosition": {
       "$ref": "#/definitions/singleBodyPosition"
     },
@@ -1128,6 +1610,9 @@
       "$ref": "#/definitions/singleBodyPosition"
     },
     "whileStatement.singleBodyPosition": {
+      "$ref": "#/definitions/singleBodyPosition"
+    },
+    "withStatement.singleBodyPosition": {
       "$ref": "#/definitions/singleBodyPosition"
     },
     "ifStatement.nextControlFlowPosition": {
@@ -1182,6 +1667,9 @@
       "$ref": "#/definitions/operatorPosition"
     },
     "conditionalType.operatorPosition": {
+      "$ref": "#/definitions/operatorPosition"
+    },
+    "unionAndIntersectionType.operatorPosition": {
       "$ref": "#/definitions/operatorPosition"
     },
     "arguments.preferHanging": {
@@ -1256,6 +1744,9 @@
     "whileStatement.preferHanging": {
       "$ref": "#/definitions/preferHanging"
     },
+    "withStatement.preferHanging": {
+      "$ref": "#/definitions/preferHanging"
+    },
     "arrayExpression.preferSingleLine": {
       "$ref": "#/definitions/preferSingleLine"
     },
@@ -1281,19 +1772,22 @@
       "$ref": "#/definitions/preferSingleLine"
     },
     "exportDeclaration.preferSingleLine": {
-      "$ref": "#/definitions/preferSingleLine"
+      "$ref": "#/definitions/preferSingleLineDefaultTrue"
     },
     "forStatement.preferSingleLine": {
       "$ref": "#/definitions/preferSingleLine"
     },
     "importDeclaration.preferSingleLine": {
-      "$ref": "#/definitions/preferSingleLine"
+      "$ref": "#/definitions/preferSingleLineDefaultTrue"
     },
     "jsxAttributes.preferSingleLine": {
       "$ref": "#/definitions/preferSingleLine"
     },
     "jsxElement.preferSingleLine": {
       "$ref": "#/definitions/preferSingleLine"
+    },
+    "jsxExpressionContainer.preferSingleLine": {
+      "$ref": "#/definitions/jsxExpressionContainer.preferSingleLine"
     },
     "mappedType.preferSingleLine": {
       "$ref": "#/definitions/preferSingleLine"

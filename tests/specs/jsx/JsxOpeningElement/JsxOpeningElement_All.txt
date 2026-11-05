@@ -10,7 +10,7 @@ const t = <Test>Test</Test>;
 const t = <Test    attrib={5}    other="test"  > < /  Test  > ;
 
 [expect]
-const t = <Test attrib={5} other="test"></Test>;
+const t = <Test attrib={5} other="test"> </Test>;
 
 == should make the body multi-line when the header is multiple lines ==
 const t = <Test attrib={5} otherAttrib="test" anotherVeryLongAttrib={234234}>Test</Test>;
@@ -69,8 +69,7 @@ function Test() {
     return (
         <View
             // comment
-        >
-        </View>
+        ></View>
     );
 }
 
@@ -84,8 +83,7 @@ function Test() {
 function Test() {
     return (
         <View // comment
-        >
-        </View>
+        ></View>
     );
 }
 
@@ -105,8 +103,7 @@ function Test() {
             // comment
             test={5} // test
             // other
-        >
-        </View>
+        ></View>
     );
 }
 
@@ -150,3 +147,23 @@ function Test() {
         />
     );
 }
+
+== should support a block comment before the name ==
+</* block */a></a>;
+< /* block */ a />;
+
+[expect]
+< /* block */ a></a>;
+< /* block */ a />;
+
+== should support a line comment before the name ==
+< // line
+a></a>;
+< // line
+a />;
+
+[expect]
+< // line
+a></a>;
+< // line
+a />;
