@@ -294,6 +294,18 @@ impl ConfigurationBuilder {
     self.insert("preferSingleLine", value.into())
   }
 
+  /// Whether to align the values and types of consecutive variable statements, object properties,
+  /// class properties, enum members, and interface and type literal properties.
+  /// A blank line, a comment on its own line, a member on multiple lines, a type next to a value,
+  /// or an object property whose key is much longer or shorter than the keys before it ends the group,
+  /// and the alignment never makes a line go over the line width.
+  ///
+  /// * `true` - Ex. `const a   = 1;` and `const bbb = 2;`
+  /// * `false` (default) - Ex. `const a = 1;` and `const bbb = 2;`
+  pub fn align_assignments(&mut self, value: bool) -> &mut Self {
+    self.insert("alignAssignments", value.into())
+  }
+
   /* space settings */
 
   /// Whether to surround bitwise and arithmetic operators in a binary expression with spaces.
@@ -1567,6 +1579,7 @@ mod tests {
       .use_braces(UseBraces::WhenNotSingleLine)
       .quote_props(QuoteProps::AsNeeded)
       .prefer_hanging(false)
+      .align_assignments(true)
       /* situational */
       .arguments_line_per_argument(false)
       .array_expression_line_per_element(false)
@@ -1798,7 +1811,7 @@ mod tests {
       .with_statement_space_around(true);
 
     let inner_config = config.get_inner_config();
-    assert_eq!(inner_config.len(), 240);
+    assert_eq!(inner_config.len(), 241);
     let diagnostics = resolve_config(inner_config, &Default::default()).diagnostics;
     assert_eq!(diagnostics.len(), 0);
   }
