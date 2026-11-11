@@ -47,7 +47,7 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
     &mut diagnostics,
   );
 
-  let semi_colons = get_value(&mut config, "semiColons", SemiColons::Prefer, &mut diagnostics);
+  let semicolons = get_value(&mut config, "semicolons", Semicolons::Prefer, &mut diagnostics);
   let brace_position = get_value(&mut config, "bracePosition", BracePosition::SameLineUnlessHanging, &mut diagnostics);
   let next_control_flow_position = get_value(&mut config, "nextControlFlowPosition", NextControlFlowPosition::SameLine, &mut diagnostics);
   let operator_position = get_value(&mut config, "operatorPosition", OperatorPosition::NextLine, &mut diagnostics);
@@ -56,16 +56,19 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
   let use_braces = get_value(&mut config, "useBraces", UseBraces::WhenNotSingleLine, &mut diagnostics);
   let prefer_hanging = get_value(&mut config, "preferHanging", false, &mut diagnostics);
   let block_padding = get_value(&mut config, "blockPadding", BlockPadding::Remove, &mut diagnostics);
+  let member_spacing = get_value(&mut config, "memberSpacing", MemberSpacing::Maintain, &mut diagnostics);
   let prefer_hanging_granular = if prefer_hanging { PreferHanging::Always } else { PreferHanging::Never };
   let prefer_single_line_nullable = get_nullable_value(&mut config, "preferSingleLine", &mut diagnostics);
   let prefer_single_line = prefer_single_line_nullable.unwrap_or(false);
   let space_surrounding_properties = get_value(&mut config, "spaceSurroundingProperties", true, &mut diagnostics);
-  let type_literal_separator_kind = get_value(&mut config, "typeLiteral.separatorKind", SemiColonOrComma::SemiColon, &mut diagnostics);
+  let type_literal_separator_kind = get_value(&mut config, "typeLiteral.separatorKind", SemicolonOrComma::Semicolon, &mut diagnostics);
   let quote_style = get_value(&mut config, "quoteStyle", QuoteStyle::AlwaysDouble, &mut diagnostics);
   let quote_props = get_value(&mut config, "quoteProps", QuoteProps::Preserve, &mut diagnostics);
   let space_around = get_value(&mut config, "spaceAround", false, &mut diagnostics);
   let space_after_control_flow_keyword = get_value(&mut config, "spaceAfterControlFlowKeyword", true, &mut diagnostics);
   let jsx_bracket_position = get_value(&mut config, "jsx.bracketPosition", SameOrNextLinePosition::NextLine, &mut diagnostics);
+  let jsx_expression_container_space_surrounding_expression =
+    get_value(&mut config, "jsxExpressionContainer.spaceSurroundingExpression", false, &mut diagnostics);
 
   let resolved_config = Configuration {
     line_width: get_value(
@@ -94,10 +97,12 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
     ),
     quote_style,
     quote_props,
-    semi_colons,
+    semicolons,
     file_indent_level: get_value(&mut config, "fileIndentLevel", 0, &mut diagnostics),
     max_blank_lines: get_value(&mut config, "maxBlankLines", 1, &mut diagnostics),
+    align_assignments: get_value(&mut config, "alignAssignments", false, &mut diagnostics),
     /* situational */
+    array_expression_line_per_element: get_value(&mut config, "arrayExpression.linePerElement", true, &mut diagnostics),
     arrow_function_use_parentheses: get_value(&mut config, "arrowFunction.useParentheses", UseParentheses::Maintain, &mut diagnostics),
     binary_expression_line_per_expression: get_value(&mut config, "binaryExpression.linePerExpression", false, &mut diagnostics),
     conditional_expression_line_per_expression: get_value(&mut config, "conditionalExpression.linePerExpression", true, &mut diagnostics),
@@ -133,13 +138,13 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
     import_declaration_sort_type_only_imports: get_value(
       &mut config,
       "importDeclaration.sortTypeOnlyImports",
-      NamedTypeImportsExportsOrder::None,
+      NamedTypeImportsExportsOrder::Inline,
       &mut diagnostics,
     ),
     export_declaration_sort_type_only_exports: get_value(
       &mut config,
       "exportDeclaration.sortTypeOnlyExports",
-      NamedTypeImportsExportsOrder::None,
+      NamedTypeImportsExportsOrder::Inline,
       &mut diagnostics,
     ),
     module_import_groups: get_import_groups(&mut config, &mut diagnostics),
@@ -199,15 +204,16 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
     variable_statement_prefer_hanging: get_value(&mut config, "variableStatement.preferHanging", prefer_hanging, &mut diagnostics),
     while_statement_prefer_hanging: get_value(&mut config, "whileStatement.preferHanging", prefer_hanging, &mut diagnostics),
     /* situational indentation */
+    conditional_expression_indent_branch_content: get_value(&mut config, "conditionalExpression.indentBranchContent", false, &mut diagnostics),
     conditional_expression_use_nested_indentation: get_value(&mut config, "conditionalExpression.useNestedIndentation", false, &mut diagnostics),
     conditional_type_use_nested_indentation: get_value(&mut config, "conditionalType.useNestedIndentation", false, &mut diagnostics),
     with_statement_prefer_hanging: get_value(&mut config, "withStatement.preferHanging", prefer_hanging, &mut diagnostics),
     /* member spacing */
-    class_declaration_member_spacing: get_value(&mut config, "classDeclaration.memberSpacing", MemberSpacing::Maintain, &mut diagnostics),
-    class_expression_member_spacing: get_value(&mut config, "classExpression.memberSpacing", MemberSpacing::Maintain, &mut diagnostics),
-    enum_declaration_member_spacing: get_value(&mut config, "enumDeclaration.memberSpacing", MemberSpacing::Maintain, &mut diagnostics),
-    interface_declaration_member_spacing: get_value(&mut config, "interfaceDeclaration.memberSpacing", MemberSpacing::Maintain, &mut diagnostics),
-    type_literal_member_spacing: get_value(&mut config, "typeLiteral.memberSpacing", MemberSpacing::Maintain, &mut diagnostics),
+    class_declaration_member_spacing: get_value(&mut config, "classDeclaration.memberSpacing", member_spacing, &mut diagnostics),
+    class_expression_member_spacing: get_value(&mut config, "classExpression.memberSpacing", member_spacing, &mut diagnostics),
+    enum_declaration_member_spacing: get_value(&mut config, "enumDeclaration.memberSpacing", member_spacing, &mut diagnostics),
+    interface_declaration_member_spacing: get_value(&mut config, "interfaceDeclaration.memberSpacing", member_spacing, &mut diagnostics),
+    type_literal_member_spacing: get_value(&mut config, "typeLiteral.memberSpacing", member_spacing, &mut diagnostics),
     /* block padding */
     block_padding,
     class_declaration_block_padding: get_value(&mut config, "classDeclaration.blockPadding", block_padding, &mut diagnostics),
@@ -303,6 +309,12 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
     ),
     jsx_attributes_prefer_single_line: get_value(&mut config, "jsxAttributes.preferSingleLine", prefer_single_line, &mut diagnostics),
     jsx_element_prefer_single_line: get_value(&mut config, "jsxElement.preferSingleLine", prefer_single_line, &mut diagnostics),
+    jsx_expression_container_prefer_single_line: get_value(
+      &mut config,
+      "jsxExpressionContainer.preferSingleLine",
+      prefer_single_line_nullable.unwrap_or(true),
+      &mut diagnostics,
+    ),
     mapped_type_prefer_single_line: get_value(&mut config, "mappedType.preferSingleLine", prefer_single_line, &mut diagnostics),
     member_expression_prefer_single_line: get_value(&mut config, "memberExpression.preferSingleLine", prefer_single_line, &mut diagnostics),
     object_expression_prefer_single_line: get_value(&mut config, "objectExpression.preferSingleLine", prefer_single_line, &mut diagnostics),
@@ -350,7 +362,7 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
       space_after_control_flow_keyword,
       &mut diagnostics,
     ),
-    for_statement_space_after_semi_colons: get_value(&mut config, "forStatement.spaceAfterSemiColons", true, &mut diagnostics),
+    for_statement_space_after_semicolons: get_value(&mut config, "forStatement.spaceAfterSemicolons", true, &mut diagnostics),
     for_in_statement_space_after_for_keyword: get_value(
       &mut config,
       "forInStatement.spaceAfterForKeyword",
@@ -375,9 +387,27 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
       &mut diagnostics,
     ),
     import_declaration_space_surrounding_named_imports: get_value(&mut config, "importDeclaration.spaceSurroundingNamedImports", true, &mut diagnostics),
-    jsx_expression_container_space_surrounding_expression: get_value(&mut config, "jsxExpressionContainer.spaceSurroundingExpression", false, &mut diagnostics),
+    jsx_expression_container_space_surrounding_expression,
+    jsx_expression_container_space_surrounding_object_literal: get_value(
+      &mut config,
+      "jsxExpressionContainer.spaceSurroundingObjectLiteral",
+      jsx_expression_container_space_surrounding_expression,
+      &mut diagnostics,
+    ),
+    jsx_expression_container_space_surrounding_array_literal: get_value(
+      &mut config,
+      "jsxExpressionContainer.spaceSurroundingArrayLiteral",
+      jsx_expression_container_space_surrounding_expression,
+      &mut diagnostics,
+    ),
     jsx_self_closing_element_space_before_slash: get_value(&mut config, "jsxSelfClosingElement.spaceBeforeSlash", true, &mut diagnostics),
     method_space_before_parentheses: get_value(&mut config, "method.spaceBeforeParentheses", false, &mut diagnostics),
+    mapped_type_space_surrounding_properties: get_value(
+      &mut config,
+      "mappedType.spaceSurroundingProperties",
+      space_surrounding_properties,
+      &mut diagnostics,
+    ),
     object_expression_space_surrounding_properties: get_value(
       &mut config,
       "objectExpression.spaceSurroundingProperties",
@@ -390,6 +420,7 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
       space_surrounding_properties,
       &mut diagnostics,
     ),
+    space_between_object_closing_braces: get_value(&mut config, "spaceBetweenObjectClosingBraces", true, &mut diagnostics),
     set_accessor_space_before_parentheses: get_value(&mut config, "setAccessor.spaceBeforeParentheses", false, &mut diagnostics),
     space_surrounding_properties,
     switch_statement_space_after_switch_keyword: get_value(
@@ -461,6 +492,72 @@ pub fn resolve_config(config: ConfigKeyMap, global_config: &GlobalConfiguration)
     }
   }
 }
+
+/// A key written under a name the plugin has since renamed, which
+/// `dprint config update` moves over.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConfigKeyRename {
+  pub old_key: &'static str,
+  pub new_key: &'static str,
+  /// The value to write under the new key, or `None` when the new key was
+  /// already set and the old one is only to be dropped.
+  pub value: Option<ConfigKeyValue>,
+}
+
+/// Finds the keys of a configuration that are written under an old name.
+pub fn get_config_key_renames(config: &ConfigKeyMap) -> Vec<ConfigKeyRename> {
+  RENAMED_KEYS
+    .iter()
+    .filter_map(|(old_key, new_key)| {
+      let value = config.get(*old_key)?;
+      Some(ConfigKeyRename {
+        old_key,
+        new_key,
+        value: (!config.contains_key(*new_key)).then(|| value.clone()),
+      })
+    })
+    .collect()
+}
+
+/// Each key that was renamed, as the old name then the new one. The old names
+/// are no longer accepted when resolving, so they're only used to update configs.
+const RENAMED_KEYS: &[(&str, &str)] = &[
+  ("semiColons", "semicolons"),
+  ("forStatement.spaceAfterSemiColons", "forStatement.spaceAfterSemicolons"),
+];
+
+/// A value written under a name the plugin has since renamed, which
+/// `dprint config update` rewrites.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConfigValueRename {
+  pub key: &'static str,
+  pub old_value: &'static str,
+  pub new_value: &'static str,
+}
+
+/// Finds the values of a configuration that are written under an old name.
+pub fn get_config_value_renames(config: &ConfigKeyMap) -> Vec<ConfigValueRename> {
+  RENAMED_VALUES
+    .iter()
+    .filter(|rename| matches!(config.get(rename.key), Some(ConfigKeyValue::String(value)) if value == rename.old_value))
+    .cloned()
+    .collect()
+}
+
+/// Each value that was renamed. The old values are no longer accepted when
+/// resolving, so they're only used to update configs.
+const RENAMED_VALUES: &[ConfigValueRename] = &[
+  ConfigValueRename {
+    key: "importDeclaration.sortTypeOnlyImports",
+    old_value: "none",
+    new_value: "inline",
+  },
+  ConfigValueRename {
+    key: "exportDeclaration.sortTypeOnlyExports",
+    old_value: "none",
+    new_value: "inline",
+  },
+];
 
 /// Gets the `module.importGroups` configuration, which is an array of objects
 /// with a `match` property that's a matcher or an array of matchers.
@@ -753,6 +850,148 @@ mod tests {
   }
 
   #[test]
+  fn handle_jsx_expression_container_prefer_single_line() {
+    let resolve = |values: &[(&str, bool)]| {
+      let mut config = ConfigKeyMap::new();
+      for (key, value) in values {
+        config.insert(key.to_string(), ConfigKeyValue::from_bool(*value));
+      }
+      let result = resolve_config(config, &GlobalConfiguration::default());
+      assert_eq!(result.diagnostics.len(), 0);
+      result.config.jsx_expression_container_prefer_single_line
+    };
+
+    // defaults to true when the global value isn't set
+    assert!(resolve(&[]));
+    // falls back to the global value when it's set
+    assert!(!resolve(&[("preferSingleLine", false)]));
+    assert!(resolve(&[("preferSingleLine", true)]));
+    // the per-node value wins over the global value
+    assert!(resolve(&[("preferSingleLine", false), ("jsxExpressionContainer.preferSingleLine", true)]));
+    assert!(!resolve(&[("preferSingleLine", true), ("jsxExpressionContainer.preferSingleLine", false)]));
+    assert!(!resolve(&[("jsxExpressionContainer.preferSingleLine", false)]));
+  }
+
+  #[test]
+  fn handle_sort_type_only_imports_exports() {
+    for (value, expected) in [
+      ("first", NamedTypeImportsExportsOrder::First),
+      ("last", NamedTypeImportsExportsOrder::Last),
+      ("inline", NamedTypeImportsExportsOrder::Inline),
+    ] {
+      let mut config = ConfigKeyMap::new();
+      config.insert(String::from("importDeclaration.sortTypeOnlyImports"), ConfigKeyValue::from_str(value));
+      config.insert(String::from("exportDeclaration.sortTypeOnlyExports"), ConfigKeyValue::from_str(value));
+      let result = resolve_config(config, &GlobalConfiguration::default());
+      assert!(result.config.import_declaration_sort_type_only_imports == expected, "{}", value);
+      assert!(result.config.export_declaration_sort_type_only_exports == expected, "{}", value);
+      assert_eq!(result.diagnostics.len(), 0, "{}", value);
+    }
+
+    let result = resolve_config(ConfigKeyMap::new(), &GlobalConfiguration::default());
+    assert!(result.config.import_declaration_sort_type_only_imports == NamedTypeImportsExportsOrder::Inline);
+    assert!(result.config.export_declaration_sort_type_only_exports == NamedTypeImportsExportsOrder::Inline);
+
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("importDeclaration.sortTypeOnlyImports"), ConfigKeyValue::from_str("other"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert_eq!(get_diagnostic_property_names(&result.diagnostics), ["importDeclaration.sortTypeOnlyImports"]);
+  }
+
+  #[test]
+  fn handle_sort_type_only_imports_exports_old_none_value() {
+    // `none` is an invalid value now and is only rewritten to `inline` by `dprint config update`
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("importDeclaration.sortTypeOnlyImports"), ConfigKeyValue::from_str("none"));
+    config.insert(String::from("exportDeclaration.sortTypeOnlyExports"), ConfigKeyValue::from_str("none"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert!(result.config.import_declaration_sort_type_only_imports == NamedTypeImportsExportsOrder::Inline);
+    assert!(result.config.export_declaration_sort_type_only_exports == NamedTypeImportsExportsOrder::Inline);
+    assert_eq!(
+      get_diagnostic_property_names(&result.diagnostics),
+      ["importDeclaration.sortTypeOnlyImports", "exportDeclaration.sortTypeOnlyExports"]
+    );
+    for diagnostic in &result.diagnostics {
+      assert_eq!(diagnostic.message, "Found invalid value 'none'.");
+    }
+  }
+
+  #[test]
+  fn get_config_value_renames_none_to_inline() {
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("importDeclaration.sortTypeOnlyImports"), ConfigKeyValue::from_str("none"));
+    config.insert(String::from("exportDeclaration.sortTypeOnlyExports"), ConfigKeyValue::from_str("none"));
+    assert_eq!(
+      get_config_value_renames(&config),
+      vec![
+        ConfigValueRename {
+          key: "importDeclaration.sortTypeOnlyImports",
+          old_value: "none",
+          new_value: "inline",
+        },
+        ConfigValueRename {
+          key: "exportDeclaration.sortTypeOnlyExports",
+          old_value: "none",
+          new_value: "inline",
+        },
+      ]
+    );
+  }
+
+  #[test]
+  fn get_config_value_renames_other_values() {
+    for value in ["inline", "first", "last", "None"] {
+      let mut config = ConfigKeyMap::new();
+      config.insert(String::from("importDeclaration.sortTypeOnlyImports"), ConfigKeyValue::from_str(value));
+      config.insert(String::from("exportDeclaration.sortTypeOnlyExports"), ConfigKeyValue::from_str(value));
+      assert_eq!(get_config_value_renames(&config), Vec::new(), "{}", value);
+    }
+
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("importDeclaration.sortTypeOnlyImports"), ConfigKeyValue::from_bool(true));
+    assert_eq!(get_config_value_renames(&config), Vec::new());
+
+    // only the key with the old value is renamed
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("importDeclaration.sortTypeOnlyImports"), ConfigKeyValue::from_str("first"));
+    config.insert(String::from("exportDeclaration.sortTypeOnlyExports"), ConfigKeyValue::from_str("none"));
+    assert_eq!(
+      get_config_value_renames(&config),
+      vec![ConfigValueRename {
+        key: "exportDeclaration.sortTypeOnlyExports",
+        old_value: "none",
+        new_value: "inline",
+      }]
+    );
+  }
+
+  #[test]
+  fn get_config_value_renames_missing_keys() {
+    assert_eq!(get_config_value_renames(&ConfigKeyMap::new()), Vec::new());
+
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("semiColons"), ConfigKeyValue::from_str("none"));
+    assert_eq!(get_config_value_renames(&config), Vec::new());
+  }
+
+  #[test]
+  fn sort_type_only_imports_exports_serde_round_trip() {
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("importDeclaration.sortTypeOnlyImports"), ConfigKeyValue::from_str("first"));
+    let config = resolve_config(config, &GlobalConfiguration::default()).config;
+    let mut json = serde_json::to_value(&config).unwrap();
+    assert_eq!(json["importDeclaration.sortTypeOnlyImports"], "first");
+    assert_eq!(json["exportDeclaration.sortTypeOnlyExports"], "inline");
+    let deserialized: Configuration = serde_json::from_value(json.clone()).unwrap();
+    assert!(deserialized.import_declaration_sort_type_only_imports == NamedTypeImportsExportsOrder::First);
+    assert!(deserialized.export_declaration_sort_type_only_exports == NamedTypeImportsExportsOrder::Inline);
+
+    // the old `none` value isn't deserialized
+    json["importDeclaration.sortTypeOnlyImports"] = serde_json::Value::from("none");
+    assert!(serde_json::from_value::<Configuration>(json).is_err());
+  }
+
+  #[test]
   fn handle_jsx_sort_class_names_kind() {
     let mut config = ConfigKeyMap::new();
     config.insert(String::from("jsx.sortClassNames"), ConfigKeyValue::from_str("tailwind"));
@@ -854,6 +1093,257 @@ mod tests {
         "taggedTemplate.embeddedLanguages.number"
       ]
     );
+  }
+
+  #[test]
+  fn handle_array_expression_line_per_element() {
+    let property_name = "arrayExpression.linePerElement";
+    for value in [None, Some(true), Some(false)] {
+      let mut config = ConfigKeyMap::new();
+      if let Some(value) = value {
+        config.insert(property_name.to_string(), value.into());
+      }
+      let result = resolve_config(config, &GlobalConfiguration::default());
+      assert_eq!(result.diagnostics.len(), 0);
+      assert_eq!(result.config.array_expression_line_per_element, value.unwrap_or(true));
+      assert_eq!(serde_json::to_value(&result.config).unwrap()[property_name], value.unwrap_or(true));
+    }
+
+    let mut config = ConfigKeyMap::new();
+    config.insert(property_name.to_string(), ConfigKeyValue::from_str("invalid"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert!(result.config.array_expression_line_per_element);
+    assert_eq!(get_diagnostic_property_names(&result.diagnostics), [property_name]);
+  }
+
+  #[test]
+  fn handle_space_between_object_closing_braces() {
+    let property_name = "spaceBetweenObjectClosingBraces";
+    for value in [None, Some(true), Some(false)] {
+      let mut config = ConfigKeyMap::new();
+      if let Some(value) = value {
+        config.insert(property_name.to_string(), value.into());
+      }
+      let result = resolve_config(config, &GlobalConfiguration::default());
+      assert_eq!(result.diagnostics.len(), 0);
+      assert_eq!(result.config.space_between_object_closing_braces, value.unwrap_or(true));
+      assert_eq!(serde_json::to_value(&result.config).unwrap()[property_name], value.unwrap_or(true));
+    }
+
+    let mut config = ConfigKeyMap::new();
+    config.insert(property_name.to_string(), ConfigKeyValue::from_str("invalid"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert!(result.config.space_between_object_closing_braces);
+    assert_eq!(get_diagnostic_property_names(&result.diagnostics), [property_name]);
+  }
+
+  #[test]
+  fn handle_align_assignments() {
+    let property_name = "alignAssignments";
+    for value in [None, Some(true), Some(false)] {
+      let mut config = ConfigKeyMap::new();
+      if let Some(value) = value {
+        config.insert(property_name.to_string(), value.into());
+      }
+      let result = resolve_config(config, &GlobalConfiguration::default());
+      assert_eq!(result.diagnostics.len(), 0);
+      assert_eq!(result.config.align_assignments, value.unwrap_or(false));
+      assert_eq!(serde_json::to_value(&result.config).unwrap()[property_name], value.unwrap_or(false));
+    }
+
+    let mut config = ConfigKeyMap::new();
+    config.insert(property_name.to_string(), ConfigKeyValue::from_str("invalid"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert!(!result.config.align_assignments);
+    assert_eq!(get_diagnostic_property_names(&result.diagnostics), [property_name]);
+  }
+
+  #[test]
+  fn handle_member_spacing() {
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("memberSpacing"), ConfigKeyValue::from_str("blankLine"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert_eq!(result.diagnostics.len(), 0);
+    assert!(result.config.class_declaration_member_spacing == MemberSpacing::BlankLine);
+    assert!(result.config.class_expression_member_spacing == MemberSpacing::BlankLine);
+    assert!(result.config.enum_declaration_member_spacing == MemberSpacing::BlankLine);
+    assert!(result.config.interface_declaration_member_spacing == MemberSpacing::BlankLine);
+    assert!(result.config.type_literal_member_spacing == MemberSpacing::BlankLine);
+  }
+
+  #[test]
+  fn handle_member_spacing_per_node_override() {
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("memberSpacing"), ConfigKeyValue::from_str("blankLine"));
+    config.insert(String::from("interfaceDeclaration.memberSpacing"), ConfigKeyValue::from_str("newLine"));
+    config.insert(String::from("typeLiteral.memberSpacing"), ConfigKeyValue::from_str("maintain"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert_eq!(result.diagnostics.len(), 0);
+    assert!(result.config.class_declaration_member_spacing == MemberSpacing::BlankLine);
+    assert!(result.config.class_expression_member_spacing == MemberSpacing::BlankLine);
+    assert!(result.config.enum_declaration_member_spacing == MemberSpacing::BlankLine);
+    assert!(result.config.interface_declaration_member_spacing == MemberSpacing::NewLine);
+    assert!(result.config.type_literal_member_spacing == MemberSpacing::Maintain);
+  }
+
+  #[test]
+  fn handle_member_spacing_default() {
+    let result = resolve_config(ConfigKeyMap::new(), &GlobalConfiguration::default());
+    assert_eq!(result.diagnostics.len(), 0);
+    assert!(result.config.class_declaration_member_spacing == MemberSpacing::Maintain);
+    assert!(result.config.type_literal_member_spacing == MemberSpacing::Maintain);
+  }
+
+  #[test]
+  fn handle_semicolons() {
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("semicolons"), ConfigKeyValue::from_str("asi"));
+    config.insert(String::from("forStatement.spaceAfterSemicolons"), ConfigKeyValue::from_bool(false));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert!(result.config.semicolons == Semicolons::Asi);
+    assert!(!result.config.for_statement_space_after_semicolons);
+    assert_eq!(result.diagnostics.len(), 0);
+  }
+
+  #[test]
+  fn handle_semicolons_invalid() {
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("semicolons"), ConfigKeyValue::from_str("other"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert!(result.config.semicolons == Semicolons::Prefer);
+    assert_eq!(get_diagnostic_property_names(&result.diagnostics), ["semicolons"]);
+  }
+
+  #[test]
+  fn handle_type_literal_separator_kind() {
+    for (value, expected) in [
+      ("semicolon", SemicolonOrComma::Semicolon),
+      ("semiColon", SemicolonOrComma::Semicolon),
+      ("comma", SemicolonOrComma::Comma),
+    ] {
+      let mut config = ConfigKeyMap::new();
+      config.insert(String::from("typeLiteral.separatorKind"), ConfigKeyValue::from_str(value));
+      let result = resolve_config(config, &GlobalConfiguration::default());
+      assert!(result.config.type_literal_separator_kind_single_line == expected, "{value}");
+      assert!(result.config.type_literal_separator_kind_multi_line == expected, "{value}");
+      assert_eq!(result.diagnostics.len(), 0, "{value}");
+    }
+
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("typeLiteral.separatorKind"), ConfigKeyValue::from_str("Semicolon"));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert_eq!(get_diagnostic_property_names(&result.diagnostics), ["typeLiteral.separatorKind"]);
+  }
+
+  #[test]
+  fn type_literal_separator_kind_serde() {
+    // serializes as `semicolon` and still deserializes `semiColon`
+    assert_eq!(serde_json::to_string(&SemicolonOrComma::Semicolon).unwrap(), "\"semicolon\"");
+    for value in ["\"semicolon\"", "\"semiColon\""] {
+      assert!(
+        serde_json::from_str::<SemicolonOrComma>(value).unwrap() == SemicolonOrComma::Semicolon,
+        "{value}"
+      );
+    }
+  }
+
+  #[test]
+  fn handle_semicolons_old_keys() {
+    // the old keys are unknown properties now and are only moved over by `dprint config update`
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("semiColons"), ConfigKeyValue::from_str("asi"));
+    config.insert(String::from("forStatement.spaceAfterSemiColons"), ConfigKeyValue::from_bool(false));
+    let result = resolve_config(config, &GlobalConfiguration::default());
+    assert!(result.config.semicolons == Semicolons::Prefer);
+    assert!(result.config.for_statement_space_after_semicolons);
+    assert_eq!(
+      get_diagnostic_property_names(&result.diagnostics),
+      ["semiColons", "forStatement.spaceAfterSemiColons"]
+    );
+    for diagnostic in &result.diagnostics {
+      assert_eq!(diagnostic.message, "Unknown property in configuration");
+    }
+  }
+
+  #[test]
+  fn get_config_key_renames_old_keys() {
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("semiColons"), ConfigKeyValue::from_str("asi"));
+    config.insert(String::from("forStatement.spaceAfterSemiColons"), ConfigKeyValue::from_bool(false));
+    assert_eq!(
+      get_config_key_renames(&config),
+      vec![
+        ConfigKeyRename {
+          old_key: "semiColons",
+          new_key: "semicolons",
+          value: Some(ConfigKeyValue::from_str("asi")),
+        },
+        ConfigKeyRename {
+          old_key: "forStatement.spaceAfterSemiColons",
+          new_key: "forStatement.spaceAfterSemicolons",
+          value: Some(ConfigKeyValue::from_bool(false)),
+        },
+      ]
+    );
+  }
+
+  #[test]
+  fn get_config_key_renames_new_keys() {
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("semicolons"), ConfigKeyValue::from_str("asi"));
+    config.insert(String::from("forStatement.spaceAfterSemicolons"), ConfigKeyValue::from_bool(false));
+    assert_eq!(get_config_key_renames(&config), Vec::new());
+  }
+
+  #[test]
+  fn get_config_key_renames_both_keys() {
+    // only drops the old key so the new key's value is kept
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("semiColons"), ConfigKeyValue::from_str("asi"));
+    config.insert(String::from("semicolons"), ConfigKeyValue::from_str("always"));
+    config.insert(String::from("forStatement.spaceAfterSemiColons"), ConfigKeyValue::from_bool(false));
+    assert_eq!(
+      get_config_key_renames(&config),
+      vec![
+        ConfigKeyRename {
+          old_key: "semiColons",
+          new_key: "semicolons",
+          value: None,
+        },
+        ConfigKeyRename {
+          old_key: "forStatement.spaceAfterSemiColons",
+          new_key: "forStatement.spaceAfterSemicolons",
+          value: Some(ConfigKeyValue::from_bool(false)),
+        },
+      ]
+    );
+  }
+
+  #[test]
+  fn get_config_key_renames_neither_key() {
+    assert_eq!(get_config_key_renames(&ConfigKeyMap::new()), Vec::new());
+
+    let mut config = ConfigKeyMap::new();
+    config.insert(String::from("quoteStyle"), ConfigKeyValue::from_str("alwaysSingle"));
+    assert_eq!(get_config_key_renames(&config), Vec::new());
+  }
+
+  #[test]
+  fn serializes_semicolons_with_new_spelling() {
+    let config = ConfigurationBuilder::new().build();
+    let value = serde_json::to_value(&config).unwrap();
+    assert_eq!(value["semicolons"], "prefer");
+    assert_eq!(value["forStatement.spaceAfterSemicolons"], true);
+    assert!(value.get("semiColons").is_none());
+    assert!(value.get("forStatement.spaceAfterSemiColons").is_none());
+    let deserialized: Configuration = serde_json::from_value(value.clone()).unwrap();
+    assert!(deserialized.semicolons == Semicolons::Prefer);
+
+    // the old spelling isn't deserialized
+    let mut value = value;
+    let semicolons = value.as_object_mut().unwrap().remove("semicolons").unwrap();
+    value["semiColons"] = semicolons;
+    assert!(serde_json::from_value::<Configuration>(value).is_err());
   }
 
   fn get_diagnostic_property_names(diagnostics: &[ConfigurationDiagnostic]) -> Vec<&str> {

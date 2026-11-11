@@ -27,7 +27,7 @@ generate_str_to_from![PreferHanging, [Never, "never"], [OnlySingleItem, "onlySin
 /// Semi colon possibilities.
 #[derive(Clone, PartialEq, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum SemiColons {
+pub enum Semicolons {
   /// Always uses semi-colons where applicable.
   Always,
   /// Prefers to use semi-colons, but doesn't add one in certain scenarios
@@ -38,17 +38,17 @@ pub enum SemiColons {
   Asi,
 }
 
-impl SemiColons {
+impl Semicolons {
   /// Gets if this option is "Always" or "Prefer".
   pub(crate) fn is_true(&self) -> bool {
     match self {
-      SemiColons::Always | SemiColons::Prefer => true,
-      SemiColons::Asi => false,
+      Semicolons::Always | Semicolons::Prefer => true,
+      Semicolons::Asi => false,
     }
   }
 }
 
-generate_str_to_from![SemiColons, [Always, "always"], [Prefer, "prefer"], [Asi, "asi"]];
+generate_str_to_from![Semicolons, [Always, "always"], [Prefer, "prefer"], [Asi, "asi"]];
 
 /// Trailing comma possibilities.
 #[derive(Clone, PartialEq, Copy, Serialize, Deserialize)]
@@ -275,7 +275,8 @@ generate_str_to_from![QuoteProps, [AsNeeded, "asNeeded"], [Consistent, "consiste
 #[derive(Clone, PartialEq, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum JsxMultiLineParens {
-  /// Never wrap JSX with parentheses.
+  /// Never wrap JSX with parentheses and remove existing ones, except when
+  /// they have comments or are needed (ex. `(<div />).props`).
   Never,
   /// Prefer wrapping with parentheses in most scenarios, except in function
   /// arguments and JSX attributes.
@@ -351,14 +352,35 @@ impl From<JsxClassNamesSortOrder> for JsxClassNamesSortConfig {
 /// Whether to use semi-colons or commas.
 #[derive(Clone, PartialEq, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum SemiColonOrComma {
+pub enum SemicolonOrComma {
   /// Use semi colons (default).
-  SemiColon,
+  #[serde(alias = "semiColon")]
+  Semicolon,
   /// Use commas.
   Comma,
 }
 
-generate_str_to_from![SemiColonOrComma, [SemiColon, "semiColon"], [Comma, "comma"]];
+// implemented manually instead of with `generate_str_to_from!` so that `semiColon` is also accepted
+impl std::str::FromStr for SemicolonOrComma {
+  type Err = ParseConfigurationError;
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    match s {
+      "semicolon" | "semiColon" => Ok(SemicolonOrComma::Semicolon),
+      "comma" => Ok(SemicolonOrComma::Comma),
+      _ => Err(ParseConfigurationError(String::from(s))),
+    }
+  }
+}
+
+impl std::fmt::Display for SemicolonOrComma {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      SemicolonOrComma::Semicolon => write!(f, "semicolon"),
+      SemicolonOrComma::Comma => write!(f, "comma"),
+    }
+  }
+}
 
 /// The kind of sort ordering to use.
 #[derive(Clone, PartialEq, Copy, Serialize, Deserialize)]
@@ -379,16 +401,20 @@ generate_str_to_from![
   [CaseInsensitive, "caseInsensitive"]
 ];
 
+/// Where type-only named imports and exports are sorted relative to the others.
 #[derive(Copy, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum NamedTypeImportsExportsOrder {
+  /// Puts type-only named imports and exports first.
   First,
+  /// Puts type-only named imports and exports last.
   Last,
+  /// Sorts type-only named imports and exports inline with the others.
   #[default]
-  None,
+  Inline,
 }
 
-generate_str_to_from![NamedTypeImportsExportsOrder, [First, "first"], [Last, "last"], [None, "none"]];
+generate_str_to_from![NamedTypeImportsExportsOrder, [First, "first"], [Last, "last"], [Inline, "inline"]];
 
 /// How type-only imports are classified by `module.importGroups`.
 #[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -505,10 +531,13 @@ pub struct Configuration {
   pub new_line_kind: NewLineKind,
   pub quote_style: QuoteStyle,
   pub quote_props: QuoteProps,
-  pub semi_colons: SemiColons,
+  pub semicolons: Semicolons,
   pub file_indent_level: u32,
   pub max_blank_lines: u32,
+  pub align_assignments: bool,
   /* situational */
+  #[serde(rename = "arrayExpression.linePerElement")]
+  pub array_expression_line_per_element: bool,
   #[serde(rename = "arrowFunction.useParentheses")]
   pub arrow_function_use_parentheses: UseParentheses,
   #[serde(rename = "binaryExpression.linePerExpression")]
@@ -534,9 +563,9 @@ pub struct Configuration {
   #[serde(rename = "memberExpression.linePerExpression")]
   pub member_expression_line_per_expression: bool,
   #[serde(rename = "typeLiteral.separatorKind.singleLine")]
-  pub type_literal_separator_kind_single_line: SemiColonOrComma,
+  pub type_literal_separator_kind_single_line: SemicolonOrComma,
   #[serde(rename = "typeLiteral.separatorKind.multiLine")]
-  pub type_literal_separator_kind_multi_line: SemiColonOrComma,
+  pub type_literal_separator_kind_multi_line: SemicolonOrComma,
   #[serde(rename = "taggedTemplate.formatEmbedded")]
   pub tagged_template_format_embedded: bool,
   /// Map of a tagged template's tag to the file extension of the language its text is formatted as.
@@ -665,6 +694,8 @@ pub struct Configuration {
   #[serde(rename = "whileStatement.preferHanging")]
   pub while_statement_prefer_hanging: bool,
   /* situational indentation */
+  #[serde(rename = "conditionalExpression.indentBranchContent")]
+  pub conditional_expression_indent_branch_content: bool,
   #[serde(rename = "conditionalExpression.useNestedIndentation")]
   pub conditional_expression_use_nested_indentation: bool,
   #[serde(rename = "conditionalType.useNestedIndentation")]
@@ -825,6 +856,8 @@ pub struct Configuration {
   pub jsx_attributes_prefer_single_line: bool,
   #[serde(rename = "jsxElement.preferSingleLine")]
   pub jsx_element_prefer_single_line: bool,
+  #[serde(rename = "jsxExpressionContainer.preferSingleLine")]
+  pub jsx_expression_container_prefer_single_line: bool,
   #[serde(rename = "mappedType.preferSingleLine")]
   pub mapped_type_prefer_single_line: bool,
   #[serde(rename = "memberExpression.preferSingleLine")]
@@ -877,8 +910,8 @@ pub struct Configuration {
   pub export_declaration_space_surrounding_named_exports: bool,
   #[serde(rename = "forStatement.spaceAfterForKeyword")]
   pub for_statement_space_after_for_keyword: bool,
-  #[serde(rename = "forStatement.spaceAfterSemiColons")]
-  pub for_statement_space_after_semi_colons: bool,
+  #[serde(rename = "forStatement.spaceAfterSemicolons")]
+  pub for_statement_space_after_semicolons: bool,
   #[serde(rename = "forInStatement.spaceAfterForKeyword")]
   pub for_in_statement_space_after_for_keyword: bool,
   #[serde(rename = "forOfStatement.spaceAfterForKeyword")]
@@ -899,14 +932,22 @@ pub struct Configuration {
   pub import_declaration_space_surrounding_named_imports: bool,
   #[serde(rename = "jsxExpressionContainer.spaceSurroundingExpression")]
   pub jsx_expression_container_space_surrounding_expression: bool,
+  #[serde(rename = "jsxExpressionContainer.spaceSurroundingObjectLiteral")]
+  pub jsx_expression_container_space_surrounding_object_literal: bool,
+  #[serde(rename = "jsxExpressionContainer.spaceSurroundingArrayLiteral")]
+  pub jsx_expression_container_space_surrounding_array_literal: bool,
   #[serde(rename = "jsxSelfClosingElement.spaceBeforeSlash")]
   pub jsx_self_closing_element_space_before_slash: bool,
   #[serde(rename = "method.spaceBeforeParentheses")]
   pub method_space_before_parentheses: bool,
+  #[serde(rename = "mappedType.spaceSurroundingProperties")]
+  pub mapped_type_space_surrounding_properties: bool,
   #[serde(rename = "objectExpression.spaceSurroundingProperties")]
   pub object_expression_space_surrounding_properties: bool,
   #[serde(rename = "objectPattern.spaceSurroundingProperties")]
   pub object_pattern_space_surrounding_properties: bool,
+  #[serde(rename = "spaceBetweenObjectClosingBraces")]
+  pub space_between_object_closing_braces: bool,
   #[serde(rename = "setAccessor.spaceBeforeParentheses")]
   pub set_accessor_space_before_parentheses: bool,
   #[serde(rename = "spaceSurroundingProperties")]
